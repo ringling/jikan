@@ -8,14 +8,14 @@ defmodule JikanWeb.ProjectLive.Show do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Project {@project.id}
-        <:subtitle>This is a project record from your database.</:subtitle>
+        {@project.name}
+        <:subtitle>{@project.description}</:subtitle>
         <:actions>
           <.button navigate={~p"/projects"}>
             <.icon name="hero-arrow-left" />
           </.button>
           <.button variant="primary" navigate={~p"/projects/#{@project}/edit?return_to=show"}>
-            <.icon name="hero-pencil-square" /> Edit project
+            <.icon name="hero-pencil-square" /> Edit
           </.button>
         </:actions>
       </.header>

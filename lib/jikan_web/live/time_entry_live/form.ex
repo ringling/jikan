@@ -10,7 +10,6 @@ defmodule JikanWeb.TimeEntryLive.Form do
     <Layouts.app flash={@flash}>
       <.header>
         {@page_title}
-        <:subtitle>Use this form to manage time_entry records in your database.</:subtitle>
       </.header>
 
       <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save">
@@ -28,7 +27,7 @@ defmodule JikanWeb.TimeEntryLive.Form do
         <.input field={@form[:duration_minutes]} type="number" label="Duration minutes" />
         <.input field={@form[:billable]} type="checkbox" label="Billable" />
         <footer>
-          <.button phx-disable-with="Saving..." variant="primary">Save Time entry</.button>
+          <.button phx-disable-with="Saving..." variant="primary">Save</.button>
           <.button navigate={return_path(@return_to, @time_entry)}>Cancel</.button>
         </footer>
       </.form>
@@ -53,7 +52,7 @@ defmodule JikanWeb.TimeEntryLive.Form do
     projects = Tracking.list_projects(user)
 
     socket
-    |> assign(:page_title, "Edit Time entry")
+    |> assign(:page_title, "Edit Time Entry")
     |> assign(:time_entry, time_entry)
     |> assign(:projects, projects)
     |> assign(:form, to_form(Tracking.change_time_entry(time_entry)))
@@ -67,7 +66,7 @@ defmodule JikanWeb.TimeEntryLive.Form do
     projects = Tracking.list_projects(user)
 
     socket
-    |> assign(:page_title, "New Time entry")
+    |> assign(:page_title, "New Time Entry")
     |> assign(:time_entry, time_entry)
     |> assign(:projects, projects)
     |> assign(:form, to_form(Tracking.change_time_entry(time_entry)))

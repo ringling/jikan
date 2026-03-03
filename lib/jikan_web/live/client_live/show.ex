@@ -8,14 +8,14 @@ defmodule JikanWeb.ClientLive.Show do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Client {@client.id}
-        <:subtitle>This is a client record from your database.</:subtitle>
+        {@client.name}
+        <:subtitle>{@client.contact_email}</:subtitle>
         <:actions>
           <.button navigate={~p"/clients"}>
             <.icon name="hero-arrow-left" />
           </.button>
           <.button variant="primary" navigate={~p"/clients/#{@client}/edit?return_to=show"}>
-            <.icon name="hero-pencil-square" /> Edit client
+            <.icon name="hero-pencil-square" /> Edit
           </.button>
         </:actions>
       </.header>

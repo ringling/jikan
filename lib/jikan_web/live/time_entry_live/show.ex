@@ -8,14 +8,14 @@ defmodule JikanWeb.TimeEntryLive.Show do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Time entry {@time_entry.id}
-        <:subtitle>This is a time_entry record from your database.</:subtitle>
+        {@time_entry.description || "Time Entry"}
+        <:subtitle>{@time_entry.date} - {@time_entry.duration_minutes || 0} minutes</:subtitle>
         <:actions>
           <.button navigate={~p"/time-entries"}>
             <.icon name="hero-arrow-left" />
           </.button>
           <.button variant="primary" navigate={~p"/time-entries/#{@time_entry}/edit?return_to=show"}>
-            <.icon name="hero-pencil-square" /> Edit time_entry
+            <.icon name="hero-pencil-square" /> Edit
           </.button>
         </:actions>
       </.header>

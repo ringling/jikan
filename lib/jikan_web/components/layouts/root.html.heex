@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Jikan" suffix=" · Phoenix Framework">
+    <.live_title default="Jikan" suffix=" · Jikan">
       {assigns[:page_title]}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
@@ -32,6 +32,9 @@
   </head>
   <body>
     <ul class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <div class="mr-8">
+        <.link href={~p"/"} class="text-2xl font-bold text-primary">Jikan</.link>
+      </div>
       <%= if @current_scope do %>
         <div class="flex-1 flex items-center gap-4">
           <li>

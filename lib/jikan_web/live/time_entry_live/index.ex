@@ -8,10 +8,10 @@ defmodule JikanWeb.TimeEntryLive.Index do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Listing Time entries
+        Time Entries
         <:actions>
           <.button variant="primary" navigate={~p"/time-entries/new"}>
-            <.icon name="hero-plus" /> New Time entry
+            <.icon name="hero-plus" /> New Entry
           </.button>
         </:actions>
       </.header>

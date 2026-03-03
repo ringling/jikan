@@ -10,7 +10,6 @@ defmodule JikanWeb.ProjectLive.Form do
     <Layouts.app flash={@flash}>
       <.header>
         {@page_title}
-        <:subtitle>Use this form to manage project records in your database.</:subtitle>
       </.header>
 
       <.form for={@form} id="project-form" phx-change="validate" phx-submit="save">

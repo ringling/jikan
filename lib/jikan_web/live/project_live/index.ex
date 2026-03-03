@@ -8,7 +8,7 @@ defmodule JikanWeb.ProjectLive.Index do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Listing Projects
+        Projects
         <:actions>
           <.button variant="primary" navigate={~p"/projects/new"}>
             <.icon name="hero-plus" /> New Project

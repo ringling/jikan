@@ -10,7 +10,6 @@ defmodule JikanWeb.ClientLive.Form do
     <Layouts.app flash={@flash}>
       <.header>
         {@page_title}
-        <:subtitle>Use this form to manage client records in your database.</:subtitle>
       </.header>
 
       <.form for={@form} id="client-form" phx-change="validate" phx-submit="save">

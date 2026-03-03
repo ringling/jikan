@@ -8,7 +8,7 @@ defmodule JikanWeb.ClientLive.Index do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Listing Clients
+        Clients
         <:actions>
           <.button variant="primary" navigate={~p"/clients/new"}>
             <.icon name="hero-plus" /> New Client
