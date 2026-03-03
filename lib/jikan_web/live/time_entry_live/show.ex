@@ -103,7 +103,16 @@ defmodule JikanWeb.TimeEntryLive.Show do
   
   defp format_time(nil), do: "-"
   defp format_time(time) do
-    Calendar.strftime(time, "%I:%M %p")
+    case time do
+      %Time{} = t ->
+        hour = t.hour
+        minute = t.minute
+        "#{String.pad_leading(to_string(hour), 2, "0")}:#{String.pad_leading(to_string(minute), 2, "0")}"
+      
+      _ ->
+        # Fallback for other time formats
+        to_string(time)
+    end
   end
 
   @impl true
