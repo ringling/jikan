@@ -8,19 +8,63 @@ defmodule JikanWeb.ClientLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        {@page_title}
-      </.header>
-
-      <.form for={@form} id="client-form" phx-change="validate" phx-submit="save">
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:contact_email]} type="text" label="Contact email" />
-        <.input field={@form[:active]} type="checkbox" label="Active" />
-        <footer>
-          <.button phx-disable-with="Saving..." variant="primary">Save Client</.button>
-          <.button navigate={return_path(@return_to, @client)}>Cancel</.button>
-        </footer>
-      </.form>
+      <div class="max-w-4xl">
+        <div class="mb-8">
+          <.link navigate={return_path(@return_to, @client)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
+            <.icon name="hero-arrow-left" class="size-4" />
+            Back
+          </.link>
+          
+          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <.icon name="hero-building-office" class="size-8" />
+            {@page_title}
+          </h1>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6">
+            <.form for={@form} id="client-form" phx-change="validate" phx-submit="save" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:name]} 
+                    type="text" 
+                    label="Company Name" 
+                    placeholder="Enter company name"
+                  />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:contact_email]} 
+                    type="email" 
+                    label="Contact Email" 
+                    placeholder="contact@company.com"
+                  />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:active]} 
+                    type="checkbox" 
+                    label="Active client" 
+                  />
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-end gap-4 pt-4 border-t">
+                <.button navigate={return_path(@return_to, @client)} class="btn-outline">
+                  Cancel
+                </.button>
+                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                  <.icon name="hero-check" class="size-5" />
+                  Save Client
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      </div>
     </Layouts.app>
     """
   end

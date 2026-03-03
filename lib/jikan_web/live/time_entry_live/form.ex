@@ -8,29 +8,81 @@ defmodule JikanWeb.TimeEntryLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        {@page_title}
-      </.header>
-
-      <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save">
-        <.input 
-          field={@form[:project_id]} 
-          type="select" 
-          label="Project" 
-          options={Enum.map(@projects, &{&1.name, &1.id})}
-          prompt="Choose a project"
-        />
-        <.input field={@form[:description]} type="text" label="Description" />
-        <.input field={@form[:date]} type="date" label="Date" />
-        <.input field={@form[:start_time]} type="time" label="Start time" />
-        <.input field={@form[:end_time]} type="time" label="End time" />
-        <.input field={@form[:duration_minutes]} type="number" label="Duration minutes" />
-        <.input field={@form[:billable]} type="checkbox" label="Billable" />
-        <footer>
-          <.button phx-disable-with="Saving..." variant="primary">Save</.button>
-          <.button navigate={return_path(@return_to, @time_entry)}>Cancel</.button>
-        </footer>
-      </.form>
+      <div class="max-w-4xl">
+        <div class="mb-8">
+          <.link navigate={return_path(@return_to, @time_entry)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
+            <.icon name="hero-arrow-left" class="size-4" />
+            Back
+          </.link>
+          
+          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <.icon name="hero-clock" class="size-8" />
+            {@page_title}
+          </h1>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6">
+            <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:project_id]} 
+                    type="select" 
+                    label="Project" 
+                    options={Enum.map(@projects, &{&1.name, &1.id})}
+                    prompt="Choose a project"
+                  />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:description]} 
+                    type="text" 
+                    label="Description" 
+                    placeholder="What did you work on?"
+                  />
+                </div>
+                
+                <div>
+                  <.input field={@form[:date]} type="date" label="Date" />
+                </div>
+                
+                <div>
+                  <.input 
+                    field={@form[:duration_minutes]} 
+                    type="number" 
+                    label="Duration (minutes)" 
+                    placeholder="90"
+                  />
+                </div>
+                
+                <div>
+                  <.input field={@form[:start_time]} type="time" label="Start Time (optional)" />
+                </div>
+                
+                <div>
+                  <.input field={@form[:end_time]} type="time" label="End Time (optional)" />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input field={@form[:billable]} type="checkbox" label="Mark as billable" />
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-end gap-4 pt-4 border-t">
+                <.button navigate={return_path(@return_to, @time_entry)} class="btn-outline">
+                  Cancel
+                </.button>
+                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                  <.icon name="hero-check" class="size-5" />
+                  Save Entry
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      </div>
     </Layouts.app>
     """
   end

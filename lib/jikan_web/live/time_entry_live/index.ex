@@ -7,43 +7,90 @@ defmodule JikanWeb.TimeEntryLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        Time Entries
-        <:actions>
-          <.button variant="primary" navigate={~p"/time-entries/new"}>
-            <.icon name="hero-plus" /> New Entry
-          </.button>
-        </:actions>
-      </.header>
-
-      <.table
-        id="time_entries"
-        rows={@streams.time_entries}
-        row_click={fn {_id, time_entry} -> JS.navigate(~p"/time-entries/#{time_entry}") end}
-      >
-        <:col :let={{_id, time_entry}} label="Description">{time_entry.description}</:col>
-        <:col :let={{_id, time_entry}} label="Date">{time_entry.date}</:col>
-        <:col :let={{_id, time_entry}} label="Start time">{time_entry.start_time}</:col>
-        <:col :let={{_id, time_entry}} label="End time">{time_entry.end_time}</:col>
-        <:col :let={{_id, time_entry}} label="Duration minutes">{time_entry.duration_minutes}</:col>
-        <:col :let={{_id, time_entry}} label="Billable">{time_entry.billable}</:col>
-        <:action :let={{_id, time_entry}}>
-          <div class="sr-only">
-            <.link navigate={~p"/time-entries/#{time_entry}"}>Show</.link>
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
+          <.icon name="hero-clock" class="size-8" />
+          Time Entries
+        </h1>
+        
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <p class="text-gray-600">Track and manage your time entries</p>
+              <.button variant="primary" navigate={~p"/time-entries/new"} class="flex items-center gap-2">
+                <.icon name="hero-plus" class="size-5" />
+                New Entry
+              </.button>
+            </div>
           </div>
-          <.link navigate={~p"/time-entries/#{time_entry}/edit"}>Edit</.link>
-        </:action>
-        <:action :let={{id, time_entry}}>
-          <.link
-            phx-click={JS.push("delete", value: %{id: time_entry.id}) |> hide("##{id}")}
-            data-confirm="Are you sure?"
-          >
-            Delete
-          </.link>
-        </:action>
-      </.table>
+          
+          <div class="overflow-x-auto">
+            <.table
+              id="time_entries"
+              rows={@streams.time_entries}
+              row_click={fn {_id, time_entry} -> JS.navigate(~p"/time-entries/#{time_entry}") end}
+            >
+              <:col :let={{_id, time_entry}} label="Project">
+                <div class="flex items-center gap-2">
+                  <span 
+                    class="inline-block w-3 h-3 rounded-full"
+                    style={"background-color: #{time_entry.project.color || "#666"}"}
+                  ></span>
+                  <span class="font-medium">{time_entry.project.name}</span>
+                </div>
+              </:col>
+              <:col :let={{_id, time_entry}} label="Description">
+                <span class="text-gray-900">{time_entry.description || "-"}</span>
+              </:col>
+              <:col :let={{_id, time_entry}} label="Date">
+                <span class="text-gray-600">{Calendar.strftime(time_entry.date, "%b %d, %Y")}</span>
+              </:col>
+              <:col :let={{_id, time_entry}} label="Duration">
+                <span class="font-medium text-gray-900">
+                  {format_duration(time_entry.duration_minutes)}
+                </span>
+              </:col>
+              <:col :let={{_id, time_entry}} label="Billable">
+                <%= if time_entry.billable do %>
+                  <span class="text-green-600">
+                    <.icon name="hero-check-circle" class="size-5" />
+                  </span>
+                <% else %>
+                  <span class="text-gray-400">
+                    <.icon name="hero-x-circle" class="size-5" />
+                  </span>
+                <% end %>
+              </:col>
+              <:action :let={{_id, time_entry}}>
+                <div class="flex items-center gap-2">
+                  <.link 
+                    navigate={~p"/time-entries/#{time_entry}/edit"}
+                    class="text-blue-600 hover:text-blue-800"
+                  >
+                    <.icon name="hero-pencil-square" class="size-4" />
+                  </.link>
+                  <.link
+                    phx-click={JS.push("delete", value: %{id: time_entry.id}) |> hide("#time_entries-#{time_entry.id}")}
+                    data-confirm="Are you sure?"
+                    class="text-red-600 hover:text-red-800"
+                  >
+                    <.icon name="hero-trash" class="size-4" />
+                  </.link>
+                </div>
+              </:action>
+            </.table>
+          </div>
+        </div>
+      </div>
     </Layouts.app>
     """
+  end
+  
+  defp format_duration(nil), do: "0:00"
+  defp format_duration(minutes) do
+    hours = div(minutes, 60)
+    mins = rem(minutes, 60)
+    "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
   end
 
   @impl true

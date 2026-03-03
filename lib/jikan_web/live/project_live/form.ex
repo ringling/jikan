@@ -8,27 +8,81 @@ defmodule JikanWeb.ProjectLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        {@page_title}
-      </.header>
-
-      <.form for={@form} id="project-form" phx-change="validate" phx-submit="save">
-        <.input 
-          field={@form[:client_id]} 
-          type="select" 
-          label="Client" 
-          options={Enum.map(@clients, &{&1.name, &1.id})}
-          prompt="Choose a client"
-        />
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:description]} type="text" label="Description" />
-        <.input field={@form[:color]} type="text" label="Color" />
-        <.input field={@form[:archived]} type="checkbox" label="Archived" />
-        <footer>
-          <.button phx-disable-with="Saving..." variant="primary">Save Project</.button>
-          <.button navigate={return_path(@return_to, @project)}>Cancel</.button>
-        </footer>
-      </.form>
+      <div class="max-w-4xl">
+        <div class="mb-8">
+          <.link navigate={return_path(@return_to, @project)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
+            <.icon name="hero-arrow-left" class="size-4" />
+            Back
+          </.link>
+          
+          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <.icon name="hero-folder" class="size-8" />
+            {@page_title}
+          </h1>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-6">
+            <.form for={@form} id="project-form" phx-change="validate" phx-submit="save" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:client_id]} 
+                    type="select" 
+                    label="Client" 
+                    options={Enum.map(@clients, &{&1.name, &1.id})}
+                    prompt="Choose a client"
+                  />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:name]} 
+                    type="text" 
+                    label="Project Name" 
+                    placeholder="Enter project name"
+                  />
+                </div>
+                
+                <div class="col-span-2">
+                  <.input 
+                    field={@form[:description]} 
+                    type="textarea" 
+                    label="Description" 
+                    placeholder="Describe the project..."
+                  />
+                </div>
+                
+                <div>
+                  <.input 
+                    field={@form[:color]} 
+                    type="color" 
+                    label="Project Color" 
+                  />
+                </div>
+                
+                <div class="flex items-end">
+                  <.input 
+                    field={@form[:archived]} 
+                    type="checkbox" 
+                    label="Archive this project" 
+                  />
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-end gap-4 pt-4 border-t">
+                <.button navigate={return_path(@return_to, @project)} class="btn-outline">
+                  Cancel
+                </.button>
+                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                  <.icon name="hero-check" class="size-5" />
+                  Save Project
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      </div>
     </Layouts.app>
     """
   end
