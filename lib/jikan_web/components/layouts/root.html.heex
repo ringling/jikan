@@ -38,17 +38,29 @@
       <%= if @current_scope do %>
         <div class="flex-1 flex items-center gap-4">
           <li>
-            <.link href={~p"/dashboard"} class="font-semibold">Dashboard</.link>
+            <.link href={~p"/dashboard"} class="font-semibold flex items-center gap-1">
+              <.icon name="hero-home" class="size-4" />
+              Dashboard
+            </.link>
           </li>
           <li>
-            <.link href={~p"/time-entries"}>Time Entries</.link>
+            <.link href={~p"/time-entries"} class="flex items-center gap-1">
+              <.icon name="hero-clock" class="size-4" />
+              Time Entries
+            </.link>
           </li>
           <%= if Jikan.Accounts.User.manager_or_above?(@current_scope.user) do %>
             <li>
-              <.link href={~p"/projects"}>Projects</.link>
+              <.link href={~p"/projects"} class="flex items-center gap-1">
+                <.icon name="hero-folder" class="size-4" />
+                Projects
+              </.link>
             </li>
             <li>
-              <.link href={~p"/clients"}>Clients</.link>
+              <.link href={~p"/clients"} class="flex items-center gap-1">
+                <.icon name="hero-user-group" class="size-4" />
+                Clients
+              </.link>
             </li>
             <%!-- TODO: Implement Reports page
             <li>
@@ -72,20 +84,32 @@
             </span>
           </li>
           <li>
-            <.link href={~p"/users/settings"}>Settings</.link>
+            <.link href={~p"/users/settings"} class="flex items-center gap-1">
+              <.icon name="hero-cog-6-tooth" class="size-4" />
+              Settings
+            </.link>
           </li>
           <li>
-            <.link href={~p"/users/log-out"} method="delete">Log out</.link>
+            <.link href={~p"/users/log-out"} method="delete" class="flex items-center gap-1">
+              <.icon name="hero-arrow-left-on-rectangle" class="size-4" />
+              Log out
+            </.link>
           </li>
         </div>
       <% else %>
         <div class="flex-1"></div>
         <div class="flex items-center gap-4">
           <li>
-            <.link href={~p"/users/register"}>Register</.link>
+            <.link href={~p"/users/register"} class="flex items-center gap-1">
+              <.icon name="hero-user-plus" class="size-4" />
+              Register
+            </.link>
           </li>
           <li>
-            <.link href={~p"/users/log-in"}>Log in</.link>
+            <.link href={~p"/users/log-in"} class="flex items-center gap-1">
+              <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
+              Log in
+            </.link>
           </li>
         </div>
       <% end %>

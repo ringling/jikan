@@ -176,13 +176,19 @@ defmodule JikanWeb.DashboardLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <h1 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
+        <.icon name="hero-home" class="size-8" />
+        Dashboard
+      </h1>
       
       <!-- Running Timer Widget -->
       <div :if={@running_timer} class="mb-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold text-blue-900">Timer Running</h3>
+            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+              <.icon name="hero-play-circle" class="size-6" />
+              Timer Running
+            </h3>
             <p class="text-blue-700">
               <%= @running_timer.project.name %> - <%= @running_timer.project.client.name %>
             </p>
@@ -196,8 +202,9 @@ defmodule JikanWeb.DashboardLive do
             </div>
             <button 
               phx-click="stop_timer"
-              class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+              class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center gap-2"
             >
+              <.icon name="hero-stop-circle" class="size-5" />
               Stop Timer
             </button>
           </div>
@@ -206,7 +213,10 @@ defmodule JikanWeb.DashboardLive do
 
       <!-- Start Timer Form (when no timer running) -->
       <div :if={!@running_timer && length(@projects) > 0} class="mb-8 bg-gray-50 rounded-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Start Timer</h3>
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <.icon name="hero-play" class="size-5" />
+          Start Timer
+        </h3>
         <form phx-submit="start_timer" class="flex gap-4">
           <select name="project_id" required class="flex-1 rounded border-gray-300">
             <option value="">Select a project...</option>
@@ -222,7 +232,8 @@ defmodule JikanWeb.DashboardLive do
             placeholder="What are you working on?" 
             class="flex-1 rounded border-gray-300"
           />
-          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition flex items-center gap-2">
+            <.icon name="hero-play-circle" class="size-5" />
             Start
           </button>
         </form>
@@ -231,19 +242,28 @@ defmodule JikanWeb.DashboardLive do
       <!-- Today's Summary -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Hours</h3>
+          <div class="flex items-center gap-2 mb-1">
+            <.icon name="hero-clock" class="size-5 text-gray-400" />
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Hours</h3>
+          </div>
           <p class="text-3xl font-bold text-gray-900 mt-2">
             <%= format_minutes(@today_summary.total_minutes) %>
           </p>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Entries</h3>
+          <div class="flex items-center gap-2 mb-1">
+            <.icon name="hero-document-text" class="size-5 text-gray-400" />
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Entries</h3>
+          </div>
           <p class="text-3xl font-bold text-gray-900 mt-2">
             <%= @today_summary.entry_count %>
           </p>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Week Total</h3>
+          <div class="flex items-center gap-2 mb-1">
+            <.icon name="hero-calendar-days" class="size-5 text-gray-400" />
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Week Total</h3>
+          </div>
           <p class="text-3xl font-bold text-gray-900 mt-2">
             <%= format_minutes(@weekly_summary.total_minutes) %>
           </p>
@@ -253,7 +273,10 @@ defmodule JikanWeb.DashboardLive do
       <!-- This Week's Hours -->
       <div class="bg-white rounded-lg shadow mb-8">
         <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4">This Week's Hours</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <.icon name="hero-chart-bar" class="size-5" />
+            This Week's Hours
+          </h3>
           <div class="space-y-3">
             <%= for day_data <- @weekly_summary.daily_data do %>
               <div class="flex items-center justify-between">
@@ -280,7 +303,10 @@ defmodule JikanWeb.DashboardLive do
       <!-- Quick Entry Form -->
       <div :if={length(@projects) > 0} class="bg-white rounded-lg shadow mb-8">
         <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4">Quick Add Time Entry</h3>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <.icon name="hero-plus-circle" class="size-5" />
+            Quick Add Time Entry
+          </h3>
           <.form for={@quick_entry_form} phx-submit="quick_add" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -335,7 +361,8 @@ defmodule JikanWeb.DashboardLive do
                 />
                 <span class="ml-2 text-sm text-gray-700">Billable</span>
               </label>
-              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition flex items-center gap-2">
+                <.icon name="hero-plus" class="size-5" />
                 Add Entry
               </button>
             </div>
@@ -347,7 +374,10 @@ defmodule JikanWeb.DashboardLive do
       <div class="bg-white rounded-lg shadow">
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Recent Entries</h3>
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+              <.icon name="hero-list-bullet" class="size-5" />
+              Recent Entries
+            </h3>
             <.link navigate={~p"/time-entries"} class="text-blue-600 hover:text-blue-700 text-sm">
               View all →
             </.link>
