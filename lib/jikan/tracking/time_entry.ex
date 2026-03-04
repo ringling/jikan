@@ -8,6 +8,8 @@ defmodule Jikan.Tracking.TimeEntry do
     field :start_time, :time
     field :end_time, :time
     field :duration_minutes, :integer
+    field :pause_duration_minutes, :integer, default: 0
+    field :paused_at, :time
     field :billable, :boolean, default: true
     
     belongs_to :project, Jikan.Tracking.Project
@@ -19,9 +21,10 @@ defmodule Jikan.Tracking.TimeEntry do
   @doc false
   def changeset(time_entry, attrs) do
     time_entry
-    |> cast(attrs, [:description, :date, :start_time, :end_time, :duration_minutes, :billable, :project_id, :user_id])
+    |> cast(attrs, [:description, :date, :start_time, :end_time, :duration_minutes, :pause_duration_minutes, :paused_at, :billable, :project_id, :user_id])
     |> validate_required([:date, :duration_minutes, :billable, :project_id, :user_id])
     |> validate_number(:duration_minutes, greater_than: 0)
+    |> validate_number(:pause_duration_minutes, greater_than_or_equal_to: 0)
     |> calculate_duration()
     |> validate_time_order()
     |> foreign_key_constraint(:project_id)

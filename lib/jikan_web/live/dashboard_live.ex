@@ -16,7 +16,7 @@ defmodule JikanWeb.DashboardLive do
         entry ->
           # Set up timer tick for running timer
           :timer.send_interval(1000, self(), :tick)
-          elapsed = calculate_elapsed(entry.start_time)
+          elapsed = calculate_elapsed(entry)
           {:ok, assign_dashboard_data(socket, user, entry, elapsed)}
       end
     else
@@ -50,7 +50,7 @@ defmodule JikanWeb.DashboardLive do
         {:noreply, socket}
       
       entry ->
-        elapsed = calculate_elapsed(entry.start_time)
+        elapsed = calculate_elapsed(entry)
         {:noreply, assign(socket, :elapsed, elapsed)}
     end
   end
@@ -98,6 +98,44 @@ defmodule JikanWeb.DashboardLive do
       
       {:error, :no_timer_running} ->
         {:noreply, put_flash(socket, :error, "No timer is running")}
+    end
+  end
+
+  @impl true
+  def handle_event("pause_timer", _params, socket) do
+    user = socket.assigns.current_user
+    
+    case Tracking.pause_timer(user) do
+      {:ok, entry} ->
+        {:noreply,
+         socket
+         |> assign(:running_timer, entry)
+         |> put_flash(:info, "Timer paused")}
+      
+      {:error, :no_timer_running} ->
+        {:noreply, put_flash(socket, :error, "No timer is running")}
+      
+      {:error, :timer_already_paused} ->
+        {:noreply, put_flash(socket, :error, "Timer is already paused")}
+    end
+  end
+
+  @impl true
+  def handle_event("resume_timer", _params, socket) do
+    user = socket.assigns.current_user
+    
+    case Tracking.resume_timer(user) do
+      {:ok, entry} ->
+        {:noreply,
+         socket
+         |> assign(:running_timer, entry)
+         |> put_flash(:info, "Timer resumed")}
+      
+      {:error, :no_timer_running} ->
+        {:noreply, put_flash(socket, :error, "No timer is running")}
+      
+      {:error, :timer_not_paused} ->
+        {:noreply, put_flash(socket, :error, "Timer is not paused")}
     end
   end
 
@@ -151,8 +189,22 @@ defmodule JikanWeb.DashboardLive do
     end
   end
 
-  defp calculate_elapsed(start_time) do
-    Time.diff(Time.utc_now(), start_time, :second)
+  defp calculate_elapsed(entry) do
+    current_time = Time.utc_now()
+    total_elapsed = Time.diff(current_time, entry.start_time, :second)
+    
+    # Calculate current pause duration if timer is paused
+    current_pause_duration = if entry.paused_at do
+      Time.diff(current_time, entry.paused_at, :second)
+    else
+      0
+    end
+    
+    # Total paused time = previously accumulated paused time + current pause duration
+    total_paused = ((entry.pause_duration_minutes || 0) * 60) + current_pause_duration
+    
+    # Actual elapsed time = total time - paused time
+    max(0, total_elapsed - total_paused)
   end
 
   defp format_duration(seconds) when seconds < 0, do: "00:00:00"
@@ -182,31 +234,55 @@ defmodule JikanWeb.DashboardLive do
       </h1>
       
       <!-- Running Timer Widget -->
-      <div :if={@running_timer} class="mb-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+      <div :if={@running_timer} class={"mb-8 rounded-lg p-6 border-2 #{if @running_timer.paused_at, do: "bg-yellow-50 border-yellow-200", else: "bg-blue-50 border-blue-200"}"}>
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
-              <.icon name="hero-play-circle" class="size-6" />
-              Timer Running
+            <h3 class={"text-lg font-semibold flex items-center gap-2 #{if @running_timer.paused_at, do: "text-yellow-900", else: "text-blue-900"}"}>
+              <%= if @running_timer.paused_at do %>
+                <.icon name="hero-pause-circle" class="size-6" />
+                Timer Paused
+              <% else %>
+                <.icon name="hero-play-circle" class="size-6" />
+                Timer Running
+              <% end %>
             </h3>
-            <p class="text-blue-700">
+            <p class={"#{if @running_timer.paused_at, do: "text-yellow-700", else: "text-blue-700"}"}>
               <%= @running_timer.project.name %> - <%= @running_timer.project.client.name %>
             </p>
-            <p :if={@running_timer.description} class="text-sm text-blue-600 mt-1">
+            <p :if={@running_timer.description} class={"text-sm mt-1 #{if @running_timer.paused_at, do: "text-yellow-600", else: "text-blue-600"}"}>
               <%= @running_timer.description %>
             </p>
           </div>
           <div class="text-right">
-            <div class="text-3xl font-mono font-bold text-blue-900">
+            <div class={"text-3xl font-mono font-bold #{if @running_timer.paused_at, do: "text-yellow-900", else: "text-blue-900"}"}>
               <%= format_duration(@elapsed) %>
             </div>
-            <button 
-              phx-click="stop_timer"
-              class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center gap-2"
-            >
-              <.icon name="hero-stop-circle" class="size-5" />
-              Stop Timer
-            </button>
+            <div class="mt-2 flex items-center gap-2">
+              <%= if @running_timer.paused_at do %>
+                <button 
+                  phx-click="resume_timer"
+                  class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  <.icon name="hero-play" class="size-5" />
+                  Resume
+                </button>
+              <% else %>
+                <button 
+                  phx-click="pause_timer"
+                  class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition flex items-center gap-2"
+                >
+                  <.icon name="hero-pause" class="size-5" />
+                  Pause
+                </button>
+              <% end %>
+              <button 
+                phx-click="stop_timer"
+                class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center gap-2"
+              >
+                <.icon name="hero-stop-circle" class="size-5" />
+                Stop
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -235,6 +235,8 @@ defmodule Jikan.Tracking do
       "date" => Date.utc_today(),
       "start_time" => Time.utc_now() |> Time.truncate(:second),
       "duration_minutes" => 0,
+      "pause_duration_minutes" => 0,
+      "paused_at" => nil,
       "billable" => true
     }
     
@@ -255,11 +257,58 @@ defmodule Jikan.Tracking do
         end_time = Time.utc_now() |> Time.truncate(:second)
         duration = Time.diff(end_time, entry.start_time, :minute)
         
+        # Subtract any pause time from total duration
+        actual_duration = duration - (entry.pause_duration_minutes || 0)
+        
         entry
         |> update_time_entry(%{
           "end_time" => end_time,
-          "duration_minutes" => duration
+          "duration_minutes" => actual_duration,
+          "paused_at" => nil  # Clear paused state
         })
+    end
+  end
+
+  @doc """
+  Pauses the running timer for a user.
+  """
+  def pause_timer(user) do
+    case get_running_timer(user) do
+      nil ->
+        {:error, :no_timer_running}
+      
+      entry ->
+        if entry.paused_at do
+          {:error, :timer_already_paused}
+        else
+          entry
+          |> update_time_entry(%{"paused_at" => Time.utc_now() |> Time.truncate(:second)})
+        end
+    end
+  end
+
+  @doc """
+  Resumes the paused timer for a user.
+  """
+  def resume_timer(user) do
+    case get_running_timer(user) do
+      nil ->
+        {:error, :no_timer_running}
+      
+      entry ->
+        if entry.paused_at do
+          current_time = Time.utc_now() |> Time.truncate(:second)
+          pause_duration = Time.diff(current_time, entry.paused_at, :minute)
+          total_pause_duration = (entry.pause_duration_minutes || 0) + pause_duration
+          
+          entry
+          |> update_time_entry(%{
+            "pause_duration_minutes" => total_pause_duration,
+            "paused_at" => nil
+          })
+        else
+          {:error, :timer_not_paused}
+        end
     end
   end
 
