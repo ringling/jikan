@@ -65,6 +65,17 @@ defmodule JikanWeb.TimeEntryLive.Form do
                   <.input field={@form[:end_time]} type="time" label="End Time (optional)" />
                 </div>
                 
+                <div>
+                  <.input 
+                    field={@form[:pause_duration_minutes]} 
+                    type="number" 
+                    label="Pause Duration (minutes)" 
+                    placeholder="0"
+                    min="0"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">Lunch breaks or other pauses</p>
+                </div>
+                
                 <div class="col-span-2">
                   <.input field={@form[:billable]} type="checkbox" label="Mark as billable" />
                 </div>

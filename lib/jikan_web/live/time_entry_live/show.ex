@@ -86,6 +86,19 @@ defmodule JikanWeb.TimeEntryLive.Show do
                   <% end %>
                 </div>
               </div>
+              
+              <%= if @time_entry.pause_duration_minutes && @time_entry.pause_duration_minutes > 0 do %>
+                <div>
+                  <h3 class="text-sm font-medium text-gray-500 mb-1">Pause Duration</h3>
+                  <div class="flex items-center gap-2">
+                    <.icon name="hero-pause-circle" class="size-5 text-yellow-600" />
+                    <p class="text-lg text-gray-900">
+                      {format_duration(@time_entry.pause_duration_minutes)}
+                    </p>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">Lunch breaks or other pauses</p>
+                </div>
+              <% end %>
             </div>
           </div>
         </div>

@@ -49,6 +49,12 @@ defmodule JikanWeb.TimeEntryLive.Index do
                 <span class="font-medium text-gray-900">
                   {format_duration(time_entry.duration_minutes)}
                 </span>
+                <%= if time_entry.pause_duration_minutes && time_entry.pause_duration_minutes > 0 do %>
+                  <span class="text-xs text-yellow-600 block">
+                    <.icon name="hero-pause-circle" class="size-3 inline" />
+                    {format_duration(time_entry.pause_duration_minutes)}
+                  </span>
+                <% end %>
               </:col>
               <:col :let={{_id, time_entry}} label="Billable">
                 <%= if time_entry.billable do %>
