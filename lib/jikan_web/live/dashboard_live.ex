@@ -7,6 +7,8 @@ defmodule JikanWeb.DashboardLive do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     
+    socket = assign(socket, :timer_ref, nil)
+    
     if connected?(socket) do
       # Check for any running timer
       case Tracking.get_running_timer(user) do
@@ -15,9 +17,12 @@ defmodule JikanWeb.DashboardLive do
         
         entry ->
           # Set up timer tick for running timer
-          :timer.send_interval(1000, self(), :tick)
+          {:ok, timer_ref} = :timer.send_interval(1000, self(), :tick)
           elapsed = calculate_elapsed(entry)
-          {:ok, assign_dashboard_data(socket, user, entry, elapsed)}
+          {:ok, 
+           socket
+           |> assign(:timer_ref, timer_ref)
+           |> assign_dashboard_data(user, entry, elapsed)}
       end
     else
       {:ok, assign_dashboard_data(socket, user, nil, 0)}
@@ -49,28 +54,61 @@ defmodule JikanWeb.DashboardLive do
       nil ->
         {:noreply, socket}
       
-      entry ->
-        elapsed = calculate_elapsed(entry)
-        {:noreply, assign(socket, :elapsed, elapsed)}
+      _entry ->
+        # Refetch the entry to ensure we have fresh data
+        user = socket.assigns.current_user
+        fresh_entry = Tracking.get_running_timer(user)
+        
+        if fresh_entry do
+          elapsed = calculate_elapsed(fresh_entry)
+          {:noreply, 
+           socket
+           |> assign(:running_timer, fresh_entry)
+           |> assign(:elapsed, elapsed)}
+        else
+          # Timer was stopped elsewhere
+          {:noreply, assign(socket, running_timer: nil, elapsed: 0)}
+        end
     end
   end
 
   @impl true
-  def handle_event("start_timer", %{"project_id" => project_id, "description" => description}, socket) do
+  def handle_event("start_timer", params, socket) do
+    IO.inspect(params, label: "START_TIMER_PARAMS")
+    
     user = socket.assigns.current_user
+    project_id = params["project_id"]
+    description = params["description"] || ""
+    
+    IO.inspect({:starting_timer, project_id, description}, label: "START_TIMER")
     
     case Tracking.start_timer(user, project_id, description) do
       {:ok, entry} ->
+        IO.inspect(entry, label: "TIMER_CREATED")
+        
+        # Cancel any existing timer
+        if socket.assigns[:timer_ref] do
+          :timer.cancel(socket.assigns.timer_ref)
+        end
+        
+        # Fetch the entry with all preloaded associations
+        entry_with_preloads = Tracking.get_running_timer(user)
+        IO.inspect(entry_with_preloads, label: "FETCHED_ENTRY_WITH_PRELOADS")
+        
         # Start the timer tick
-        :timer.send_interval(1000, self(), :tick)
+        {:ok, timer_ref} = :timer.send_interval(1000, self(), :tick)
+        IO.inspect(timer_ref, label: "TIMER_REF")
         
         {:noreply,
          socket
-         |> assign(:running_timer, entry)
+         |> assign(:timer_ref, timer_ref)
+         |> assign(:running_timer, entry_with_preloads)
          |> assign(:elapsed, 0)
          |> put_flash(:info, "Timer started")}
       
-      {:error, _changeset} ->
+      {:error, changeset} ->
+        IO.inspect(changeset, label: "START_TIMER_CHANGESET")
+        IO.inspect(changeset.errors, label: "START_TIMER_ERROR")
         {:noreply, put_flash(socket, :error, "Failed to start timer")}
     end
   end
@@ -81,6 +119,11 @@ defmodule JikanWeb.DashboardLive do
     
     case Tracking.stop_timer(user) do
       {:ok, _entry} ->
+        # Cancel the timer interval
+        if socket.assigns[:timer_ref] do
+          :timer.cancel(socket.assigns.timer_ref)
+        end
+        
         # Refresh dashboard data
         today_summary = Tracking.daily_summary(user)
         recent_entries = 
@@ -90,6 +133,7 @@ defmodule JikanWeb.DashboardLive do
         
         {:noreply,
          socket
+         |> assign(:timer_ref, nil)
          |> assign(:running_timer, nil)
          |> assign(:elapsed, 0)
          |> assign(:today_summary, today_summary)
@@ -98,6 +142,9 @@ defmodule JikanWeb.DashboardLive do
       
       {:error, :no_timer_running} ->
         {:noreply, put_flash(socket, :error, "No timer is running")}
+      
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to stop timer")}
     end
   end
 
@@ -106,10 +153,15 @@ defmodule JikanWeb.DashboardLive do
     user = socket.assigns.current_user
     
     case Tracking.pause_timer(user) do
-      {:ok, entry} ->
+      {:ok, _entry} ->
+        # Fetch the updated entry with all preloaded associations
+        entry = Tracking.get_running_timer(user)
+        elapsed = calculate_elapsed(entry)
+        
         {:noreply,
          socket
          |> assign(:running_timer, entry)
+         |> assign(:elapsed, elapsed)
          |> put_flash(:info, "Timer paused")}
       
       {:error, :no_timer_running} ->
@@ -125,10 +177,15 @@ defmodule JikanWeb.DashboardLive do
     user = socket.assigns.current_user
     
     case Tracking.resume_timer(user) do
-      {:ok, entry} ->
+      {:ok, _entry} ->
+        # Fetch the updated entry with all preloaded associations
+        entry = Tracking.get_running_timer(user)
+        elapsed = calculate_elapsed(entry)
+        
         {:noreply,
          socket
          |> assign(:running_timer, entry)
+         |> assign(:elapsed, elapsed)
          |> put_flash(:info, "Timer resumed")}
       
       {:error, :no_timer_running} ->
@@ -136,6 +193,9 @@ defmodule JikanWeb.DashboardLive do
       
       {:error, :timer_not_paused} ->
         {:noreply, put_flash(socket, :error, "Timer is not paused")}
+      
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to resume timer")}
     end
   end
 

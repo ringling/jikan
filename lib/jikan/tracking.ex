@@ -257,8 +257,8 @@ defmodule Jikan.Tracking do
         end_time = Time.utc_now() |> Time.truncate(:second)
         duration = Time.diff(end_time, entry.start_time, :minute)
         
-        # Subtract any pause time from total duration
-        actual_duration = duration - (entry.pause_duration_minutes || 0)
+        # Subtract any pause time from total duration, ensuring minimum 0
+        actual_duration = max(0, duration - (entry.pause_duration_minutes || 0))
         
         entry
         |> update_time_entry(%{
@@ -298,8 +298,10 @@ defmodule Jikan.Tracking do
       entry ->
         if entry.paused_at do
           current_time = Time.utc_now() |> Time.truncate(:second)
-          pause_duration = Time.diff(current_time, entry.paused_at, :minute)
-          total_pause_duration = (entry.pause_duration_minutes || 0) + pause_duration
+          pause_duration_seconds = Time.diff(current_time, entry.paused_at, :second)
+          # Convert to minutes and round up to ensure we capture all pause time  
+          pause_duration_minutes = div(pause_duration_seconds + 59, 60)  # Round up division
+          total_pause_duration = (entry.pause_duration_minutes || 0) + pause_duration_minutes
           
           entry
           |> update_time_entry(%{

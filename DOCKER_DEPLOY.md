@@ -117,7 +117,7 @@ DATABASE_PATH=/app/data/jikan.db
 **Create and lock down the file:**
 
 ```bash
-sudo nano /etc/jikan.env
+sudo vim /etc/jikan.env
 sudo chmod 600 /etc/jikan.env
 ```
 
