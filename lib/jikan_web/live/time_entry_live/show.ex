@@ -23,7 +23,7 @@ defmodule JikanWeb.TimeEntryLive.Show do
         <.header>
           <.icon name="hero-clock" class="size-8 inline" /> Time Entry Details
           <:subtitle>
-            {Calendar.strftime(@time_entry.date, "%B %d, %Y")}
+            {Calendar.strftime(@time_entry.date, "%d.%m.%y")}
           </:subtitle>
           <:actions>
             <.button variant="primary" navigate={~p"/time-entries/#{@time_entry}/edit?return_to=show"} class="gap-2">

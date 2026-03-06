@@ -453,7 +453,7 @@ defmodule JikanWeb.DashboardLive do
             <%= for day_data <- @weekly_summary.daily_data do %>
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium w-32">
-                  <%= Calendar.strftime(day_data.date, "%A, %b %d") %>
+                  <%= Calendar.strftime(day_data.date, "%d.%m.%y") %>
                 </span>
                 <div class="flex items-center gap-4 flex-1">
                   <progress 
@@ -598,7 +598,7 @@ defmodule JikanWeb.DashboardLive do
                       </p>
                       <div class="flex items-center gap-3 ml-11">
                         <div class="badge badge-outline badge-sm">
-                          <%= entry.date %>
+                          <%= Calendar.strftime(entry.date, "%d.%m.%y") %>
                         </div>
                         <div class="flex flex-col items-start">
                           <div class="badge badge-primary badge-sm">
