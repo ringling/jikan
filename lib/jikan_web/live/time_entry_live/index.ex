@@ -48,6 +48,18 @@ defmodule JikanWeb.TimeEntryLive.Index do
                     {Calendar.strftime(time_entry.date, "%d.%m.%y")}
                   </div>
                 </:col>
+                <:col :let={{_id, time_entry}} label="Month" class="hidden lg:table-cell">
+                  <div class="badge badge-neutral badge-sm gap-1">
+                    <.icon name="hero-calendar" class="size-3" />
+                    {format_month(time_entry.date)}
+                  </div>
+                </:col>
+                <:col :let={{_id, time_entry}} label="Week" class="hidden lg:table-cell">
+                  <div class="badge badge-secondary badge-sm gap-1">
+                    <.icon name="hero-clock" class="size-3" />
+                    W{format_week(time_entry.date)}
+                  </div>
+                </:col>
                 <:col :let={{_id, time_entry}} label="Duration">
                   <div class="flex flex-col items-start">
                     <div class="badge badge-primary">
@@ -113,6 +125,28 @@ defmodule JikanWeb.TimeEntryLive.Index do
     hours = div(minutes, 60)
     mins = rem(minutes, 60)
     "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
+  end
+
+  defp format_month(date) do
+    case date.month do
+      1 -> "Jan"
+      2 -> "Feb" 
+      3 -> "Mar"
+      4 -> "Apr"
+      5 -> "Maj"
+      6 -> "Jun"
+      7 -> "Jul"
+      8 -> "Aug"
+      9 -> "Sep"
+      10 -> "Okt"
+      11 -> "Nov"
+      12 -> "Dec"
+    end
+  end
+
+  defp format_week(date) do
+    {_year, week} = :calendar.iso_week_number({date.year, date.month, date.day})
+    String.pad_leading(to_string(week), 2, "0")
   end
 
   @impl true
