@@ -3,7 +3,7 @@ defmodule Jikan.Release do
 
   def migrate do
     load_app()
-
+    
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
@@ -11,9 +11,14 @@ defmodule Jikan.Release do
 
   def seed(file \\ "seeds.exs") do
     load_app()
-
+    
+    # Start the repos
+    for repo <- repos() do
+      {:ok, _} = repo.start_link(pool_size: 2)
+    end
+    
     seed_file = Path.join([:code.priv_dir(@app), "repo", file])
-
+    
     if File.exists?(seed_file) do
       Code.eval_file(seed_file)
       IO.puts("Seeds from #{file} executed successfully")
