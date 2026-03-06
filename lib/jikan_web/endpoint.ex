@@ -43,8 +43,6 @@ defmodule JikanWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  # Handle reverse proxy headers
-  plug RemoteIp, headers: ~w[x-forwarded-for x-real-ip]
 
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
