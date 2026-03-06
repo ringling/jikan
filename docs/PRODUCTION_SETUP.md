@@ -1,5 +1,11 @@
 # Production Setup - Jikan Time Tracking
 
+## Baqckup
+
+```bash
+scp -r root@157.180.64.13:/var/lib/docker/volumes/jikan_data/_data/ data_backup
+```
+
 ## Production Database Created Successfully ✅
 
 ### Admin Credentials

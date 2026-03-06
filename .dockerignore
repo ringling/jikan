@@ -11,3 +11,4 @@ doc/
 *.db
 *.db-shm
 *.db-wal
+data_backup/

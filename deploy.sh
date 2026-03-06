@@ -16,7 +16,7 @@ else
 fi
 
 echo "→ Stopping old container (if running)..."
-docker stop jikan 2>/dev/null || true
+docker stop --timeout jikan 2>/dev/null || true
 docker rm   jikan 2>/dev/null || true
 
 echo "→ Starting new container..."
