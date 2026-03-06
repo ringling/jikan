@@ -12,17 +12,18 @@ defmodule Jikan.Release do
   def seed(file \\ "seeds.exs") do
     load_app()
     
-    # Start the app to ensure all dependencies are running
-    {:ok, _} = Application.ensure_all_started(@app)
-    
-    seed_file = Path.join([:code.priv_dir(@app), "repo", file])
-    
-    if File.exists?(seed_file) do
-      Code.eval_file(seed_file)
-      IO.puts("Seeds from #{file} executed successfully")
-    else
-      IO.puts("Seed file not found: #{seed_file}")
-      {:error, :not_found}
+    # Use Ecto.Migrator.with_repo to properly start just the repo
+    for repo <- repos() do
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, fn _repo ->
+        seed_file = Path.join([:code.priv_dir(@app), "repo", file])
+        
+        if File.exists?(seed_file) do
+          Code.eval_file(seed_file)
+          IO.puts("Seeds from #{file} executed successfully")
+        else
+          IO.puts("Seed file not found: #{seed_file}")
+        end
+      end)
     end
   end
 
