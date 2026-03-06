@@ -7,7 +7,7 @@ defmodule JikanWeb.ProjectLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-2">
+      <div class="p-1">
         <.header>
           <.icon name="hero-folder" class="size-8 inline" /> Projects
           <:subtitle>Manage your projects and track their progress</:subtitle>

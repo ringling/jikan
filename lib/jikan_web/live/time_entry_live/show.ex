@@ -7,7 +7,7 @@ defmodule JikanWeb.TimeEntryLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-2">
+      <div class="p-1">
         <div class="breadcrumbs text-sm mb-6">
           <ul>
             <li>
