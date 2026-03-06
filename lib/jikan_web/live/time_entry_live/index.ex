@@ -12,6 +12,14 @@ defmodule JikanWeb.TimeEntryLive.Index do
           <.icon name="hero-clock" class="size-8 inline" /> Time Entries
           <:subtitle>Track and manage your time entries</:subtitle>
           <:actions>
+            <.button 
+              variant="outline" 
+              href={build_export_url(@filters)}
+              class="gap-2"
+            >
+              <.icon name="hero-arrow-down-tray" class="size-5" />
+              Download CSV
+            </.button>
             <.button variant="primary" navigate={~p"/time-entries/new"} class="gap-2">
               <.icon name="hero-plus" class="size-5" />
               New Entry
@@ -391,5 +399,20 @@ defmodule JikanWeb.TimeEntryLive.Index do
 
   defp has_active_filters?(filters) do
     Enum.any?(filters, fn {_key, value} -> value != "" and not is_nil(value) end)
+  end
+
+  defp build_export_url(filters) do
+    base_url = "/exports/time-entries"
+    if has_active_filters?(filters) do
+      query_params = 
+        filters
+        |> Enum.reject(fn {_key, value} -> value == "" or is_nil(value) end)
+        |> Enum.into(%{})
+        |> URI.encode_query()
+      
+      "#{base_url}?#{query_params}"
+    else
+      base_url
+    end
   end
 end

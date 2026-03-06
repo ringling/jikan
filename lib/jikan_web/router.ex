@@ -39,6 +39,9 @@ defmodule JikanWeb.Router do
       live "/time-entries/:id/edit", TimeEntryLive.Form, :edit
     end
 
+    # Time Entries CSV Export (available to all authenticated users)
+    get "/exports/time-entries", ExportController, :time_entries
+
     # User settings (non-LiveView routes)
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
@@ -64,9 +67,6 @@ defmodule JikanWeb.Router do
       
       # live "/reports", ReportLive  # TODO: Implement ReportLive
     end
-    
-    # Export also requires manager+
-    # get "/exports/time-entries", ExportController, :time_entries  # TODO: Implement ExportController
   end
 
   # Admin-only routes

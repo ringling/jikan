@@ -464,4 +464,89 @@ defmodule Jikan.Tracking do
     })
     |> Repo.all()
   end
+
+  # ===== EXPORT FUNCTIONS =====
+
+  @doc """
+  Exports time entries to CSV format for a user with optional filters.
+  """
+  def export_time_entries_to_csv(user, filters \\ %{}) do
+    time_entries = list_time_entries(user, filters)
+    
+    csv_header = "Date,Company,Project,Description,Start Time,End Time,Duration,Pause Duration,Billable,Week,Month\n"
+    
+    csv_rows = 
+      time_entries
+      |> Enum.map(&format_time_entry_for_csv/1)
+      |> Enum.map(&csv_row_to_string/1)
+      |> Enum.join("\n")
+    
+    csv_header <> csv_rows
+  end
+
+  defp format_time_entry_for_csv(time_entry) do
+    [
+      Calendar.strftime(time_entry.date, "%d.%m.%y"),
+      time_entry.project.client.name,
+      time_entry.project.name,
+      time_entry.description || "",
+      format_time_for_csv(time_entry.start_time),
+      format_time_for_csv(time_entry.end_time),
+      format_duration_for_csv(time_entry.duration_minutes),
+      format_duration_for_csv(time_entry.pause_duration_minutes || 0),
+      if(time_entry.billable, do: "Yes", else: "No"),
+      "W#{format_week_for_csv(time_entry.date)}",
+      format_month_for_csv(time_entry.date)
+    ]
+  end
+
+  defp format_time_for_csv(nil), do: ""
+  defp format_time_for_csv(time) do
+    "#{String.pad_leading(to_string(time.hour), 2, "0")}:#{String.pad_leading(to_string(time.minute), 2, "0")}"
+  end
+
+  defp format_duration_for_csv(nil), do: "0:00"
+  defp format_duration_for_csv(0), do: "0:00" 
+  defp format_duration_for_csv(minutes) do
+    hours = div(minutes, 60)
+    mins = rem(minutes, 60)
+    "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
+  end
+
+  defp format_week_for_csv(date) do
+    {_year, week} = :calendar.iso_week_number({date.year, date.month, date.day})
+    String.pad_leading(to_string(week), 2, "0")
+  end
+
+  defp format_month_for_csv(date) do
+    case date.month do
+      1 -> "Jan"
+      2 -> "Feb" 
+      3 -> "Mar"
+      4 -> "Apr"
+      5 -> "Maj"
+      6 -> "Jun"
+      7 -> "Jul"
+      8 -> "Aug"
+      9 -> "Sep"
+      10 -> "Okt"
+      11 -> "Nov"
+      12 -> "Dec"
+    end
+  end
+
+  defp csv_row_to_string(row) do
+    row
+    |> Enum.map(&escape_csv_field/1)
+    |> Enum.join(",")
+  end
+
+  defp escape_csv_field(field) do
+    field_str = to_string(field)
+    if String.contains?(field_str, [",", "\"", "\n"]) do
+      "\"#{String.replace(field_str, "\"", "\"\"")}\"" 
+    else
+      field_str
+    end
+  end
 end
