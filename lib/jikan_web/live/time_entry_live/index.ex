@@ -42,7 +42,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
             
             <div :if={@show_filters} class="space-y-4">
               <form phx-submit="apply_filters">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div class="form-control">
                     <label class="label">
                       <span class="label-text">Company</span>
@@ -53,6 +53,19 @@ defmodule JikanWeb.TimeEntryLive.Index do
                       value={@filters["client_id"] || ""}
                     >
                       {Phoenix.HTML.Form.options_for_select(client_options(@clients), @filters["client_id"] || "")}
+                    </select>
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text">Year</span>
+                    </label>
+                    <select 
+                      name="filters[year]" 
+                      class="select select-bordered w-full"
+                      value={@filters["year"] || ""}
+                    >
+                      {Phoenix.HTML.Form.options_for_select(year_options(), @filters["year"] || "")}
                     </select>
                   </div>
                   
@@ -108,8 +121,14 @@ defmodule JikanWeb.TimeEntryLive.Index do
                                         nil -> "Unknown"
                                         client -> client.name
                                       end %>
+                        <% "year" -> %>
+                          Year: <%= value %>
                         <% "month" -> %>
-                          Month: <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                          <%= if @filters["year"] && @filters["year"] != "" do %>
+                            <%= @filters["year"] %> <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                          <% else %>
+                            Month: <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                          <% end %>
                         <% "week" -> %>
                           Week: W<%= String.pad_leading(value, 2, "0") %>
                       <% end %>
@@ -328,6 +347,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
   defp build_filters_from_params(params) do
     %{}
     |> maybe_put_filter("client_id", params["client_id"])
+    |> maybe_put_filter("year", params["year"])
     |> maybe_put_filter("month", params["month"])
     |> maybe_put_filter("week", params["week"])
   end
@@ -357,6 +377,12 @@ defmodule JikanWeb.TimeEntryLive.Index do
   defp week_options do
     [{"All Weeks", ""}] ++ 
     Enum.map(1..53, fn week -> {"W#{String.pad_leading(to_string(week), 2, "0")}", to_string(week)} end)
+  end
+
+  defp year_options do
+    current_year = Date.utc_today().year
+    years = (current_year - 5)..(current_year + 1) |> Enum.to_list() |> Enum.reverse()
+    [{"All Years", ""}] ++ Enum.map(years, fn year -> {to_string(year), to_string(year)} end)
   end
 
   defp client_options(clients) do

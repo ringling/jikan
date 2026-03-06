@@ -186,6 +186,11 @@ defmodule Jikan.Tracking do
   end
   defp filter_by_client(query, _), do: query
 
+  defp filter_by_month(query, %{"month" => month, "year" => year}) when month != "" and year != "" do
+    month_int = String.to_integer(month)
+    year_int = String.to_integer(year)
+    query |> where([t], fragment("CAST(strftime('%m', ?) AS INTEGER)", t.date) == ^month_int and fragment("CAST(strftime('%Y', ?) AS INTEGER)", t.date) == ^year_int)
+  end
   defp filter_by_month(query, %{"month" => month}) when month != "" do
     month_int = String.to_integer(month)
     query |> where([t], fragment("CAST(strftime('%m', ?) AS INTEGER)", t.date) == ^month_int)
