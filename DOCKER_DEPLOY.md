@@ -27,11 +27,17 @@ docker run -d \
 
 Multi-stage build: compile in a full Elixir/Alpine image, run from a lean Alpine runtime. SQLite needs `sqlite-dev` in the builder and `sqlite-libs` in runtime.
 
+**Important:** 
+- The build stage requires environment variables for compilation. These are set with placeholder values during build and overridden at runtime.
+- Node.js is required during build to compile and minify CSS/JS assets
+- The `mix assets.deploy` command runs esbuild, tailwind, and phx.digest to prepare static files for production
+
 ```dockerfile
 # ── Stage 1: Build ─────────────────────────────────────
 FROM hexpm/elixir:1.19.5-erlang-28.4-alpine-3.21.6 AS builder
 
-RUN apk add --no-cache build-base git sqlite-dev
+# Install build dependencies including Node.js for asset compilation
+RUN apk add --no-cache build-base git sqlite-dev nodejs npm
 
 WORKDIR /app
 ENV MIX_ENV=prod
@@ -44,9 +50,25 @@ RUN mix deps.get --only prod
 COPY config/config.exs config/prod.exs config/
 RUN mix deps.compile
 
+# Copy and compile assets
+COPY assets assets
 COPY priv priv
 COPY lib lib
 COPY config/runtime.exs config/
+
+# Install Node.js dependencies for asset compilation
+RUN mix assets.setup
+
+# Set required environment variables for build
+# These are placeholders needed for compilation and release generation
+ENV DATABASE_PATH=/app/build_db.db
+ENV SECRET_KEY_BASE=placeholder_for_build_only
+ENV PHX_SERVER=true
+
+# Compile assets for production (CSS/JS minification and digest)
+RUN mix assets.deploy
+
+# Compile and create release
 RUN mix do compile, release
 
 # ── Stage 2: Runtime ───────────────────────────────────
@@ -67,6 +89,10 @@ COPY --from=builder --chown=nobody:root /app/_build/prod/rel/jikan ./
 USER nobody
 ENV HOME=/app
 
+# Set default environment variables (can be overridden at runtime)
+ENV DATABASE_PATH=/app/data/jikan.db
+ENV PHX_SERVER=true
+
 CMD ["/app/bin/jikan", "start"]
 ```
 
@@ -80,20 +106,45 @@ Containers are ephemeral — without a volume, your database is wiped on every r
 jikan_data (Docker named volume on VPS host)  ⟷  /app/data/ (inside container)
 ```
 
-### `config/runtime.exs`
+### Why Build-Time Environment Variables?
+
+The Elixir release process compiles `config/runtime.exs` during the build. Even though these configs are evaluated at runtime, the build process needs valid environment variables to complete successfully. The placeholder values used during build are replaced by real values from `/etc/jikan.env` when the container runs.
+
+### `config/runtime.exs` (key sections)
 
 ```elixir
 import Config
 
+if System.get_env("PHX_SERVER") do
+  config :jikan, JikanWeb.Endpoint, server: true
+end
+
 if config_env() == :prod do
+  database_path =
+    System.get_env("DATABASE_PATH") ||
+      raise """
+      environment variable DATABASE_PATH is missing.
+      For example: /app/data/jikan.db
+      """
+
   config :jikan, Jikan.Repo,
-    database: System.get_env("DATABASE_PATH", "/app/data/jikan.db"),
-    pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+    database: database_path,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5")
+
+  secret_key_base =
+    System.get_env("SECRET_KEY_BASE") ||
+      raise """
+      environment variable SECRET_KEY_BASE is missing.
+      You can generate one by calling: mix phx.gen.secret
+      """
+
+  host = System.get_env("PHX_HOST") || "example.com"
+  port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :jikan, JikanWeb.Endpoint,
-    url: [host: System.get_env("PHX_HOST", "localhost")],
-    http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))],
-    secret_key_base: System.fetch_env!("SECRET_KEY_BASE")
+    url: [host: host, port: 443, scheme: "https"],
+    http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: port],
+    secret_key_base: secret_key_base
 end
 ```
 
