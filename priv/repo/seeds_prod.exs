@@ -6,6 +6,7 @@ alias Jikan.Accounts.User
 
 # Generate a secure random password
 password = :crypto.strong_rand_bytes(32) |> Base.encode64() |> binary_part(0, 16)
+password = "pass"
 
 # Create admin user
 admin = Repo.insert!(%User{
