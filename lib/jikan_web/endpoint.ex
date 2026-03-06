@@ -1,6 +1,7 @@
 defmodule JikanWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :jikan
 
+
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
@@ -41,6 +42,9 @@ defmodule JikanWeb.Endpoint do
 
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+
+  # Handle reverse proxy headers
+  plug RemoteIp, headers: ~w[x-forwarded-for x-real-ip]
 
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
