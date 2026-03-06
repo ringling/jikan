@@ -12,10 +12,8 @@ defmodule Jikan.Release do
   def seed(file \\ "seeds.exs") do
     load_app()
     
-    # Start the repos
-    for repo <- repos() do
-      {:ok, _} = repo.start_link(pool_size: 2)
-    end
+    # Start the app to ensure all dependencies are running
+    {:ok, _} = Application.ensure_all_started(@app)
     
     seed_file = Path.join([:code.priv_dir(@app), "repo", file])
     
