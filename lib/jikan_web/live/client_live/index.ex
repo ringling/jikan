@@ -47,13 +47,13 @@ defmodule JikanWeb.ClientLive.Index do
                     </div>
                   </div>
                 </:col>
-                <:col :let={{_id, client}} label="Projects">
+                <:col :let={{_id, client}} label="Projects" class="hidden md:table-cell">
                   <div class="badge badge-secondary">
                     <.icon name="hero-folder" class="size-3 mr-1" />
                     {length(client.projects || [])} project<%= if length(client.projects || []) != 1, do: "s" %>
                   </div>
                 </:col>
-                <:col :let={{_id, client}} label="Status">
+                <:col :let={{_id, client}} label="Status" class="hidden sm:table-cell">
                   <%= if client.active do %>
                     <div class="badge badge-success gap-1">
                       <.icon name="hero-check-circle" class="size-3" />

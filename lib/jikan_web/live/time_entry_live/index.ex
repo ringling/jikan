@@ -61,7 +61,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
                     <% end %>
                   </div>
                 </:col>
-                <:col :let={{_id, time_entry}} label="Billable">
+                <:col :let={{_id, time_entry}} label="Billable" class="hidden sm:table-cell">
                   <%= if time_entry.billable do %>
                     <div class="badge badge-success gap-1">
                       <.icon name="hero-check-circle" class="size-4" />

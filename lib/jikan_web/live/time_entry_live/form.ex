@@ -34,76 +34,94 @@ defmodule JikanWeb.TimeEntryLive.Form do
         <div class="card bg-base-100 shadow-lg">
           <div class="card-body">
             <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-2">
-                  <.input 
-                    field={@form[:project_id]} 
-                    type="select" 
-                    label="Project" 
-                    options={Enum.map(@projects, &{"#{&1.name} - #{&1.client.name}", &1.id})}
-                    prompt="Choose a project"
-                  />
+              <!-- Project & Description Section -->
+              <div class="mb-8">
+                <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                  <.icon name="hero-folder" class="size-5" />
+                  Project Details
+                </h3>
+                <div class="grid grid-cols-1 gap-6">
+                  <div>
+                    <.input 
+                      field={@form[:project_id]} 
+                      type="select" 
+                      label="Project" 
+                      options={Enum.map(@projects, &{"#{&1.name} - #{&1.client.name}", &1.id})}
+                      prompt="Choose a project"
+                    />
+                  </div>
+                  
+                  <div>
+                    <.input 
+                      field={@form[:description]} 
+                      type="text" 
+                      label="Description" 
+                      placeholder="What did you work on?"
+                    />
+                  </div>
                 </div>
-                
-                <div class="col-span-2">
-                  <.input 
-                    field={@form[:description]} 
-                    type="text" 
-                    label="Description" 
-                    placeholder="What did you work on?"
-                  />
-                </div>
-                
-                <div class="form-control w-full">
-                  <.input field={@form[:date]} type="date" label="Date" />
-                </div>
-                
-                <div class="form-control w-full">
-                  <.input 
-                    field={@form[:duration_minutes]} 
-                    type="number" 
-                    label="Duration (minutes)" 
-                    placeholder="90"
-                    min="1"
-                  />
-                  <label class="label">
-                    <span class="label-text-alt">Enter total work time in minutes</span>
-                  </label>
-                </div>
-                
-                <div class="form-control w-full">
-                  <.input field={@form[:start_time]} type="time" label="Start Time (optional)" />
-                  <label class="label">
-                    <span class="label-text-alt">When you started working</span>
-                  </label>
-                </div>
-                
-                <div class="form-control w-full">
-                  <.input field={@form[:end_time]} type="time" label="End Time (optional)" />
-                  <label class="label">
-                    <span class="label-text-alt">When you finished working</span>
-                  </label>
-                </div>
-                
-                <div class="form-control w-full">
-                  <.input 
-                    field={@form[:pause_duration_minutes]} 
-                    type="number" 
-                    label="Pause Duration (minutes)" 
-                    placeholder="0"
-                    min="0"
-                  />
-                  <label class="label">
-                    <span class="label-text-alt">Lunch breaks or other pauses</span>
-                  </label>
-                </div>
-                
-                <div class="form-control">
-                  <.input field={@form[:billable]} type="checkbox" label="Mark as billable" />
+              </div>
+
+              <div class="divider"></div>
+
+              <!-- Date & Time Section -->
+              <div class="mb-8">
+                <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                  <.icon name="hero-clock" class="size-5" />
+                  Time & Date
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div>
+                    <.input field={@form[:date]} type="date" label="Date" />
+                  </div>
+                  
+                  <div>
+                    <.input 
+                      field={@form[:duration_minutes]} 
+                      type="number" 
+                      label="Duration (minutes)" 
+                      placeholder="90"
+                      min="1"
+                    />
+                    <label class="label">
+                      <span class="label-text-alt text-xs opacity-70">Enter total work time in minutes</span>
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <.input 
+                      field={@form[:pause_duration_minutes]} 
+                      type="number" 
+                      label="Pause Duration (minutes)" 
+                      placeholder="0"
+                      min="0"
+                    />
+                    <label class="label">
+                      <span class="label-text-alt text-xs opacity-70">Lunch breaks or other pauses</span>
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <.input field={@form[:start_time]} type="time" label="Start Time (optional)" />
+                    <label class="label">
+                      <span class="label-text-alt text-xs opacity-70">When you started working</span>
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <.input field={@form[:end_time]} type="time" label="End Time (optional)" />
+                    <label class="label">
+                      <span class="label-text-alt text-xs opacity-70">When you finished working</span>
+                    </label>
+                  </div>
+                  
+                  <div class="flex items-center">
+                    <.input field={@form[:billable]} type="checkbox" label="Mark as billable" />
+                  </div>
                 </div>
               </div>
               
-              <div class="card-actions justify-end mt-8">
+              <div class="card-actions justify-end">
                 <.button variant="ghost" navigate={return_path(@return_to, @time_entry)} class="gap-2">
                   <.icon name="hero-x-mark" class="size-4" />
                   Cancel
