@@ -10,6 +10,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
       <div class="p-1">
         <.header>
           <.icon name="hero-clock" class="size-8 inline" /> Time Entries
+          <div class="badge badge-neutral badge-lg ml-3">{@entry_count}</div>
           <:subtitle>Track and manage your time entries</:subtitle>
           <:actions>
             <.button 
@@ -29,129 +30,117 @@ defmodule JikanWeb.TimeEntryLive.Index do
         
         <!-- Filter Panel -->
         <div class="card bg-base-100 shadow-sm mb-4">
-          <div class="card-body p-4">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold flex items-center gap-2">
+          <div class="card-body p-0">
+            <div class="collapse collapse-arrow bg-base-100">
+              <input type="checkbox" checked={@show_filters} phx-click="toggle_filters" />
+              <div class="collapse-title text-lg font-semibold flex items-center gap-2">
                 <.icon name="hero-funnel" class="size-5" />
                 Filters
                 <%= if has_active_filters?(@filters) do %>
                   <div class="badge badge-primary badge-sm">{Enum.count(@filters, fn {_k, v} -> v != "" end)}</div>
                 <% end %>
-              </h3>
-              <.button 
-                variant="ghost" 
-                phx-click="toggle_filters" 
-                class="btn-sm gap-2"
-              >
-                <.icon name={if @show_filters, do: "hero-chevron-up", else: "hero-chevron-down"} class="size-4" />
-                {if @show_filters, do: "Hide", else: "Show"}
-              </.button>
-            </div>
-            
-            <div :if={@show_filters} class="space-y-4">
-              <form phx-submit="apply_filters">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text">Company</span>
-                    </label>
-                    <select 
-                      name="filters[client_id]" 
-                      class="select select-bordered w-full"
-                      value={@filters["client_id"] || ""}
-                    >
-                      {Phoenix.HTML.Form.options_for_select(client_options(@clients), @filters["client_id"] || "")}
-                    </select>
-                  </div>
-                  
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text">Year</span>
-                    </label>
-                    <select 
-                      name="filters[year]" 
-                      class="select select-bordered w-full"
-                      value={@filters["year"] || ""}
-                    >
-                      {Phoenix.HTML.Form.options_for_select(year_options(), @filters["year"] || "")}
-                    </select>
-                  </div>
-                  
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text">Month</span>
-                    </label>
-                    <select 
-                      name="filters[month]" 
-                      class="select select-bordered w-full"
-                      value={@filters["month"] || ""}
-                    >
-                      {Phoenix.HTML.Form.options_for_select(month_options(), @filters["month"] || "")}
-                    </select>
-                  </div>
-                  
-                  <div class="form-control">
-                    <label class="label">
-                      <span class="label-text">Week</span>
-                    </label>
-                    <select 
-                      name="filters[week]" 
-                      class="select select-bordered w-full"
-                      value={@filters["week"] || ""}
-                    >
-                      {Phoenix.HTML.Form.options_for_select(week_options(), @filters["week"] || "")}
-                    </select>
-                  </div>
-                </div>
                 
-                <div class="flex justify-end gap-2 mt-4">
-                  <.button variant="ghost" phx-click="clear_filters" type="button" class="gap-2">
-                    <.icon name="hero-x-mark" class="size-4" />
-                    Clear Filters
-                  </.button>
-                  <.button variant="primary" type="submit" class="gap-2">
-                    <.icon name="hero-magnifying-glass" class="size-4" />
-                    Apply Filters
-                  </.button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Active Filters Display -->
-            <%= if has_active_filters?(@filters) and !@show_filters do %>
-              <div class="flex flex-wrap gap-2">
-                <%= for {key, value} <- @filters, value != "" and !is_nil(value) do %>
-                  <div class="badge badge-outline gap-2">
-                    <span>
-                      <%= case key do %>
-                        <% "client_id" -> %>
-                          Company: <%= case Enum.find(@clients, &(&1.id == String.to_integer(value))) do
-                                        nil -> "Unknown"
-                                        client -> client.name
-                                      end %>
-                        <% "year" -> %>
-                          Year: <%= value %>
-                        <% "month" -> %>
-                          <%= if @filters["year"] && @filters["year"] != "" do %>
-                            <%= @filters["year"] %> <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
-                          <% else %>
-                            Month: <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                <!-- Active Filters Display when collapsed -->
+                <%= if has_active_filters?(@filters) and !@show_filters do %>
+                  <div class="flex flex-wrap gap-2 ml-4">
+                    <%= for {key, value} <- @filters, value != "" and !is_nil(value) do %>
+                      <div class="badge badge-outline badge-sm gap-1">
+                        <span>
+                          <%= case key do %>
+                            <% "client_id" -> %>
+                              <%= case Enum.find(@clients, &(&1.id == String.to_integer(value))) do
+                                    nil -> "Unknown"
+                                    client -> client.name
+                                  end %>
+                            <% "year" -> %>
+                              <%= value %>
+                            <% "month" -> %>
+                              <%= if @filters["year"] && @filters["year"] != "" do %>
+                                <%= @filters["year"] %> <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                              <% else %>
+                                <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                              <% end %>
+                            <% "week" -> %>
+                              W<%= String.pad_leading(value, 2, "0") %>
                           <% end %>
-                        <% "week" -> %>
-                          Week: W<%= String.pad_leading(value, 2, "0") %>
-                      <% end %>
-                    </span>
-                    <button 
-                      type="button" 
-                      phx-click="clear_filters" 
-                      class="btn btn-ghost btn-xs"
-                    >
-                      <.icon name="hero-x-mark" class="size-3" />
-                    </button>
+                        </span>
+                      </div>
+                    <% end %>
                   </div>
                 <% end %>
               </div>
-            <% end %>
+              
+              <div class="collapse-content">
+                <div class="p-4">
+                  <form phx-submit="apply_filters">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div class="form-control">
+                        <label class="label">
+                          <span class="label-text">Company</span>
+                        </label>
+                        <select 
+                          name="filters[client_id]" 
+                          class="select select-bordered w-full"
+                          value={@filters["client_id"] || ""}
+                        >
+                          {Phoenix.HTML.Form.options_for_select(client_options(@clients), @filters["client_id"] || "")}
+                        </select>
+                      </div>
+                      
+                      <div class="form-control">
+                        <label class="label">
+                          <span class="label-text">Year</span>
+                        </label>
+                        <select 
+                          name="filters[year]" 
+                          class="select select-bordered w-full"
+                          value={@filters["year"] || ""}
+                        >
+                          {Phoenix.HTML.Form.options_for_select(year_options(), @filters["year"] || "")}
+                        </select>
+                      </div>
+                      
+                      <div class="form-control">
+                        <label class="label">
+                          <span class="label-text">Month</span>
+                        </label>
+                        <select 
+                          name="filters[month]" 
+                          class="select select-bordered w-full"
+                          value={@filters["month"] || ""}
+                        >
+                          {Phoenix.HTML.Form.options_for_select(month_options(), @filters["month"] || "")}
+                        </select>
+                      </div>
+                      
+                      <div class="form-control">
+                        <label class="label">
+                          <span class="label-text">Week</span>
+                        </label>
+                        <select 
+                          name="filters[week]" 
+                          class="select select-bordered w-full"
+                          value={@filters["week"] || ""}
+                        >
+                          {Phoenix.HTML.Form.options_for_select(week_options(), @filters["week"] || "")}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-2 mt-4">
+                      <.button variant="ghost" phx-click="clear_filters" type="button" class="gap-2">
+                        <.icon name="hero-x-mark" class="size-4" />
+                        Clear Filters
+                      </.button>
+                      <.button variant="primary" type="submit" class="gap-2">
+                        <.icon name="hero-magnifying-glass" class="size-4" />
+                        Apply Filters
+                      </.button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -288,6 +277,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
+    time_entries = list_time_entries(user, %{})
     
     {:ok,
      socket
@@ -295,18 +285,21 @@ defmodule JikanWeb.TimeEntryLive.Index do
      |> assign(:filters, %{})
      |> assign(:clients, list_clients(user))
      |> assign(:show_filters, false)
-     |> stream(:time_entries, list_time_entries(user, %{}))}
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries)}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
     user = socket.assigns.current_user
     filters = build_filters_from_params(params)
+    time_entries = list_time_entries(user, filters)
     
     {:noreply,
      socket
      |> assign(:filters, filters)
-     |> stream(:time_entries, list_time_entries(user, filters), reset: true)}
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)}
   end
 
   @impl true
@@ -315,7 +308,10 @@ defmodule JikanWeb.TimeEntryLive.Index do
     time_entry = Tracking.get_time_entry!(user, id)
     {:ok, _} = Tracking.delete_time_entry(time_entry)
 
-    {:noreply, stream_delete(socket, :time_entries, time_entry)}
+    {:noreply, 
+     socket
+     |> assign(:entry_count, socket.assigns.entry_count - 1)
+     |> stream_delete(:time_entries, time_entry)}
   end
 
   def handle_event("toggle_filters", _params, socket) do
@@ -325,22 +321,26 @@ defmodule JikanWeb.TimeEntryLive.Index do
   def handle_event("apply_filters", %{"filters" => filter_params}, socket) do
     user = socket.assigns.current_user
     filters = build_filters_from_params(filter_params)
+    time_entries = list_time_entries(user, filters)
     
     {:noreply,
      socket
      |> assign(:filters, filters)
-     |> stream(:time_entries, list_time_entries(user, filters), reset: true)
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)
      |> push_patch(to: ~p"/time-entries?#{filters}")}
   end
 
   def handle_event("clear_filters", _params, socket) do
     user = socket.assigns.current_user
     filters = %{}
+    time_entries = list_time_entries(user, filters)
     
     {:noreply,
      socket
      |> assign(:filters, filters)
-     |> stream(:time_entries, list_time_entries(user, filters), reset: true)
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)
      |> push_patch(to: ~p"/time-entries")}
   end
 
