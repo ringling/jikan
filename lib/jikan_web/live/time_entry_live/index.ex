@@ -45,7 +45,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
                 </:col>
                 <:col :let={{_id, time_entry}} label="Date">
                   <div class="badge badge-outline whitespace-nowrap">
-                    {Calendar.strftime(time_entry.date, "%b %d, %Y")}
+                    {Calendar.strftime(time_entry.date, "%d.%m.%y")}
                   </div>
                 </:col>
                 <:col :let={{_id, time_entry}} label="Duration">
