@@ -579,15 +579,9 @@ defmodule JikanWeb.DashboardLive do
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-3 mb-2">
-                        <div class="indicator">
-                          <span 
-                            class="indicator-item badge badge-sm"
-                            style={"background-color: #{entry.project.color}"}
-                          ></span>
-                          <div class="avatar placeholder">
-                            <div class="bg-neutral text-neutral-content rounded-full w-8">
-                              <span class="text-xs"><%= String.first(entry.project.name) %></span>
-                            </div>
+                        <div class="avatar avatar-placeholder">
+                          <div class="text-white w-8 rounded-full" style={"background-color: #{entry.project.color}"}>
+                            <span class="text-xs"><%= String.slice(entry.project.name, 0..1) |> String.upcase %></span>
                           </div>
                         </div>
                         <div>

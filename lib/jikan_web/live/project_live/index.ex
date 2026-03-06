@@ -29,15 +29,9 @@ defmodule JikanWeb.ProjectLive.Index do
               >
                 <:col :let={{_id, project}} label="Project">
                   <div class="flex items-center gap-3">
-                    <div class="indicator">
-                      <span 
-                        class="indicator-item badge badge-sm"
-                        style={"background-color: #{project.color || "#666"}"}
-                      ></span>
-                      <div class="avatar placeholder">
-                        <div class="bg-neutral text-neutral-content rounded-full w-10">
-                          <span class="text-sm font-semibold">{String.first(project.name)}</span>
-                        </div>
+                    <div class="avatar avatar-placeholder">
+                      <div class="text-white w-8 rounded-full" style={"background-color: #{project.color || "#666"}"}>
+                        <span class="text-xs">{String.slice(project.name, 0..1) |> String.upcase}</span>
                       </div>
                     </div>
                     <div>

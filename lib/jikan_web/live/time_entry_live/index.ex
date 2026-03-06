@@ -29,15 +29,9 @@ defmodule JikanWeb.TimeEntryLive.Index do
               >
                 <:col :let={{_id, time_entry}} label="Project">
                   <div class="flex items-center gap-3">
-                    <div class="indicator">
-                      <span 
-                        class="indicator-item badge badge-sm"
-                        style={"background-color: #{time_entry.project.color || "#666"}"}
-                      ></span>
-                      <div class="avatar placeholder">
-                        <div class="bg-neutral text-neutral-content rounded-full w-8">
-                          <span class="text-xs">{String.first(time_entry.project.name)}</span>
-                        </div>
+                    <div class="avatar avatar-placeholder">
+                      <div class="text-white w-8 rounded-full" style={"background-color: #{time_entry.project.color || "#666"}"}>
+                        <span class="text-xs">{String.slice(time_entry.project.name, 0..1) |> String.upcase}</span>
                       </div>
                     </div>
                     <div>

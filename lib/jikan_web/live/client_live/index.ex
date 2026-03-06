@@ -29,9 +29,9 @@ defmodule JikanWeb.ClientLive.Index do
               >
                 <:col :let={{_id, client}} label="Client">
                   <div class="flex items-center gap-3">
-                    <div class="avatar placeholder">
-                      <div class="bg-neutral text-neutral-content rounded-full w-10">
-                        <span class="text-sm font-semibold">{String.first(client.name)}</span>
+                    <div class="avatar avatar-placeholder">
+                      <div class="bg-primary text-primary-content w-8 rounded-full">
+                        <span class="text-xs">{String.slice(client.name, 0..1) |> String.upcase}</span>
                       </div>
                     </div>
                     <div>
