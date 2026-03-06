@@ -7,7 +7,7 @@ defmodule JikanWeb.ClientLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-6">
+      <div class="p-2">
         <.header>
           <.icon name="hero-user-group" class="size-8 inline" /> Clients
           <:subtitle>Manage your client information and relationships</:subtitle>

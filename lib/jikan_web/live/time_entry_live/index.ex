@@ -7,7 +7,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-6">
+      <div class="p-2">
         <.header>
           <.icon name="hero-clock" class="size-8 inline" /> Time Entries
           <:subtitle>Track and manage your time entries</:subtitle>

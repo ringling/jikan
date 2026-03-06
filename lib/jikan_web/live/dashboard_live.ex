@@ -287,7 +287,7 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-6">
+    <div class="p-2">
       <div class="hero bg-base-200 rounded-box mb-6">
         <div class="hero-content text-center">
           <div class="max-w-md">

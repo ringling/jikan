@@ -7,7 +7,7 @@ defmodule JikanWeb.ProjectLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-6 max-w-4xl mx-auto">
+      <div class="p-2 max-w-4xl mx-auto">
         <div class="breadcrumbs text-sm mb-6">
           <ul>
             <li>

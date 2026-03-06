@@ -35,7 +35,7 @@ defmodule JikanWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <main class="px-4 py-8 sm:px-6 lg:px-8">
+    <main class="px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
       <div class="mx-auto max-w-7xl">
         {render_slot(@inner_block)}
       </div>
