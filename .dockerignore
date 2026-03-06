@@ -1,0 +1,13 @@
+_build/
+deps/
+.git/
+.elixir_ls/
+priv/static/
+*.md
+.env
+.env.*
+test/
+doc/
+*.db
+*.db-shm
+*.db-wal
