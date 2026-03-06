@@ -153,6 +153,9 @@ defmodule Jikan.Tracking do
     |> filter_by_date_range(filters)
     |> filter_by_project(filters)
     |> filter_by_billable(filters)
+    |> filter_by_client(filters)
+    |> filter_by_month(filters)
+    |> filter_by_week(filters)
   end
 
   defp filter_by_date_range(query, %{"from_date" => from_date, "to_date" => to_date}) do
@@ -175,6 +178,25 @@ defmodule Jikan.Tracking do
     query |> where(billable: ^billable)
   end
   defp filter_by_billable(query, _), do: query
+
+  defp filter_by_client(query, %{"client_id" => client_id}) when client_id != "" do
+    query 
+    |> join(:inner, [t], p in Project, on: t.project_id == p.id)
+    |> where([t, p], p.client_id == ^client_id)
+  end
+  defp filter_by_client(query, _), do: query
+
+  defp filter_by_month(query, %{"month" => month}) when month != "" do
+    month_int = String.to_integer(month)
+    query |> where([t], fragment("CAST(strftime('%m', ?) AS INTEGER)", t.date) == ^month_int)
+  end
+  defp filter_by_month(query, _), do: query
+
+  defp filter_by_week(query, %{"week" => week}) when week != "" do
+    week_int = String.to_integer(week)
+    query |> where([t], fragment("CAST(strftime('%W', ?) AS INTEGER) + 1", t.date) == ^week_int)
+  end
+  defp filter_by_week(query, _), do: query
 
   @doc """
   Gets a single time entry for a user.

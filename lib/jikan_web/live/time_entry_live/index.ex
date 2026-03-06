@@ -19,6 +19,115 @@ defmodule JikanWeb.TimeEntryLive.Index do
           </:actions>
         </.header>
         
+        <!-- Filter Panel -->
+        <div class="card bg-base-100 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <.icon name="hero-funnel" class="size-5" />
+                Filters
+                <%= if has_active_filters?(@filters) do %>
+                  <div class="badge badge-primary badge-sm">{Enum.count(@filters, fn {_k, v} -> v != "" end)}</div>
+                <% end %>
+              </h3>
+              <.button 
+                variant="ghost" 
+                phx-click="toggle_filters" 
+                class="btn-sm gap-2"
+              >
+                <.icon name={if @show_filters, do: "hero-chevron-up", else: "hero-chevron-down"} class="size-4" />
+                {if @show_filters, do: "Hide", else: "Show"}
+              </.button>
+            </div>
+            
+            <div :if={@show_filters} class="space-y-4">
+              <form phx-submit="apply_filters">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text">Company</span>
+                    </label>
+                    <select 
+                      name="filters[client_id]" 
+                      class="select select-bordered w-full"
+                      value={@filters["client_id"] || ""}
+                    >
+                      {Phoenix.HTML.Form.options_for_select(client_options(@clients), @filters["client_id"] || "")}
+                    </select>
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text">Month</span>
+                    </label>
+                    <select 
+                      name="filters[month]" 
+                      class="select select-bordered w-full"
+                      value={@filters["month"] || ""}
+                    >
+                      {Phoenix.HTML.Form.options_for_select(month_options(), @filters["month"] || "")}
+                    </select>
+                  </div>
+                  
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text">Week</span>
+                    </label>
+                    <select 
+                      name="filters[week]" 
+                      class="select select-bordered w-full"
+                      value={@filters["week"] || ""}
+                    >
+                      {Phoenix.HTML.Form.options_for_select(week_options(), @filters["week"] || "")}
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-4">
+                  <.button variant="ghost" phx-click="clear_filters" type="button" class="gap-2">
+                    <.icon name="hero-x-mark" class="size-4" />
+                    Clear Filters
+                  </.button>
+                  <.button variant="primary" type="submit" class="gap-2">
+                    <.icon name="hero-magnifying-glass" class="size-4" />
+                    Apply Filters
+                  </.button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Active Filters Display -->
+            <%= if has_active_filters?(@filters) and !@show_filters do %>
+              <div class="flex flex-wrap gap-2">
+                <%= for {key, value} <- @filters, value != "" and !is_nil(value) do %>
+                  <div class="badge badge-outline gap-2">
+                    <span>
+                      <%= case key do %>
+                        <% "client_id" -> %>
+                          Company: <%= case Enum.find(@clients, &(&1.id == String.to_integer(value))) do
+                                        nil -> "Unknown"
+                                        client -> client.name
+                                      end %>
+                        <% "month" -> %>
+                          Month: <%= Enum.find(month_options(), fn {_label, val} -> val == value end) |> elem(0) %>
+                        <% "week" -> %>
+                          Week: W<%= String.pad_leading(value, 2, "0") %>
+                      <% end %>
+                    </span>
+                    <button 
+                      type="button" 
+                      phx-click="clear_filters" 
+                      class="btn btn-ghost btn-xs"
+                    >
+                      <.icon name="hero-x-mark" class="size-3" />
+                    </button>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        
         <div class="card bg-base-100 shadow-lg">
           <div class="card-body p-0">
             <div class="overflow-x-auto">
@@ -156,7 +265,21 @@ defmodule JikanWeb.TimeEntryLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Time entries")
-     |> stream(:time_entries, list_time_entries(user))}
+     |> assign(:filters, %{})
+     |> assign(:clients, list_clients(user))
+     |> assign(:show_filters, false)
+     |> stream(:time_entries, list_time_entries(user, %{}))}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    user = socket.assigns.current_user
+    filters = build_filters_from_params(params)
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> stream(:time_entries, list_time_entries(user, filters), reset: true)}
   end
 
   @impl true
@@ -168,7 +291,79 @@ defmodule JikanWeb.TimeEntryLive.Index do
     {:noreply, stream_delete(socket, :time_entries, time_entry)}
   end
 
-  defp list_time_entries(user) do
-    Tracking.list_time_entries(user)
+  def handle_event("toggle_filters", _params, socket) do
+    {:noreply, assign(socket, :show_filters, !socket.assigns.show_filters)}
+  end
+
+  def handle_event("apply_filters", %{"filters" => filter_params}, socket) do
+    user = socket.assigns.current_user
+    filters = build_filters_from_params(filter_params)
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> stream(:time_entries, list_time_entries(user, filters), reset: true)
+     |> push_patch(to: ~p"/time-entries?#{filters}")}
+  end
+
+  def handle_event("clear_filters", _params, socket) do
+    user = socket.assigns.current_user
+    filters = %{}
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> stream(:time_entries, list_time_entries(user, filters), reset: true)
+     |> push_patch(to: ~p"/time-entries")}
+  end
+
+  defp list_time_entries(user, filters) do
+    Tracking.list_time_entries(user, filters)
+  end
+
+  defp list_clients(user) do
+    Tracking.list_clients(user)
+  end
+
+  defp build_filters_from_params(params) do
+    %{}
+    |> maybe_put_filter("client_id", params["client_id"])
+    |> maybe_put_filter("month", params["month"])
+    |> maybe_put_filter("week", params["week"])
+  end
+
+  defp maybe_put_filter(filters, _key, nil), do: filters
+  defp maybe_put_filter(filters, _key, ""), do: filters
+  defp maybe_put_filter(filters, key, value), do: Map.put(filters, key, value)
+
+  defp month_options do
+    [
+      {"All Months", ""},
+      {"Jan", "1"},
+      {"Feb", "2"},
+      {"Mar", "3"},
+      {"Apr", "4"},
+      {"Maj", "5"},
+      {"Jun", "6"},
+      {"Jul", "7"},
+      {"Aug", "8"},
+      {"Sep", "9"},
+      {"Okt", "10"},
+      {"Nov", "11"},
+      {"Dec", "12"}
+    ]
+  end
+
+  defp week_options do
+    [{"All Weeks", ""}] ++ 
+    Enum.map(1..53, fn week -> {"W#{String.pad_leading(to_string(week), 2, "0")}", to_string(week)} end)
+  end
+
+  defp client_options(clients) do
+    [{"All Companies", ""}] ++ Enum.map(clients, &{&1.name, &1.id})
+  end
+
+  defp has_active_filters?(filters) do
+    Enum.any?(filters, fn {_key, value} -> value != "" and not is_nil(value) end)
   end
 end
