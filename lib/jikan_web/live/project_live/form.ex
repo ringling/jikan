@@ -8,24 +8,34 @@ defmodule JikanWeb.ProjectLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="max-w-4xl">
-        <div class="mb-8">
-          <.link navigate={return_path(@return_to, @project)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
-            <.icon name="hero-arrow-left" class="size-4" />
-            Back
-          </.link>
-          
-          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <.icon name="hero-folder" class="size-8" />
-            {@page_title}
-          </h1>
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <.link navigate={return_path(@return_to, @project)} class="btn btn-ghost btn-sm gap-2">
+                <.icon name="hero-arrow-left" class="size-4" />
+                Back
+              </.link>
+            </li>
+          </ul>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6">
-            <.form for={@form} id="project-form" phx-change="validate" phx-submit="save" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-2">
+        <.header>
+          <.icon name="hero-folder" class="size-8 inline" /> {@page_title}
+          <:subtitle>
+            <%= if @live_action == :new do %>
+              Create a new project to organize your time tracking
+            <% else %>
+              Update the project details and settings
+            <% end %>
+          </:subtitle>
+        </.header>
+        
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <.form for={@form} id="project-form" phx-change="validate" phx-submit="save">
+              <div class="space-y-6">
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:client_id]} 
                     type="select" 
@@ -33,48 +43,66 @@ defmodule JikanWeb.ProjectLive.Form do
                     options={Enum.map(@clients, &{&1.name, &1.id})}
                     prompt="Choose a client"
                   />
+                  <label class="label">
+                    <span class="label-text-alt">Select which client this project belongs to</span>
+                  </label>
                 </div>
                 
-                <div class="col-span-2">
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:name]} 
                     type="text" 
                     label="Project Name" 
                     placeholder="Enter project name"
                   />
+                  <label class="label">
+                    <span class="label-text-alt">This will appear in time entry forms and reports</span>
+                  </label>
                 </div>
                 
-                <div class="col-span-2">
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:description]} 
                     type="textarea" 
                     label="Description" 
-                    placeholder="Describe the project..."
+                    placeholder="Describe the project goals, scope, or other details..."
                   />
+                  <label class="label">
+                    <span class="label-text-alt">Optional project description for reference</span>
+                  </label>
                 </div>
                 
-                <div>
-                  <.input 
-                    field={@form[:color]} 
-                    type="color" 
-                    label="Project Color" 
-                  />
-                </div>
-                
-                <div class="flex items-end">
-                  <.input 
-                    field={@form[:archived]} 
-                    type="checkbox" 
-                    label="Archive this project" 
-                  />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="form-control w-full">
+                    <.input 
+                      field={@form[:color]} 
+                      type="color" 
+                      label="Project Color" 
+                    />
+                    <label class="label">
+                      <span class="label-text-alt">Used for visual identification in the UI</span>
+                    </label>
+                  </div>
+                  
+                  <div class="form-control">
+                    <.input 
+                      field={@form[:archived]} 
+                      type="checkbox" 
+                      label="Archive this project" 
+                    />
+                    <label class="label">
+                      <span class="label-text-alt">Archived projects won't appear in new time entries</span>
+                    </label>
+                  </div>
                 </div>
               </div>
               
-              <div class="flex items-center justify-end gap-4 pt-4 border-t">
-                <.button navigate={return_path(@return_to, @project)} class="btn-outline">
+              <div class="card-actions justify-end mt-8">
+                <.button variant="ghost" navigate={return_path(@return_to, @project)} class="gap-2">
+                  <.icon name="hero-x-mark" class="size-4" />
                   Cancel
                 </.button>
-                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                <.button type="submit" phx-disable-with="Saving..." variant="primary" class="gap-2">
                   <.icon name="hero-check" class="size-5" />
                   Save Project
                 </.button>

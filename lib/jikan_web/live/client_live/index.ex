@@ -7,77 +7,98 @@ defmodule JikanWeb.ClientLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-          <.icon name="hero-user-group" class="size-8" />
-          Clients
-        </h1>
+      <div class="p-6">
+        <.header>
+          <.icon name="hero-user-group" class="size-8 inline" /> Clients
+          <:subtitle>Manage your client information and relationships</:subtitle>
+          <:actions>
+            <.button variant="primary" navigate={~p"/clients/new"} class="gap-2">
+              <.icon name="hero-plus" class="size-5" />
+              New Client
+            </.button>
+          </:actions>
+        </.header>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <p class="text-gray-600">Manage your client information</p>
-              <.button variant="primary" navigate={~p"/clients/new"} class="flex items-center gap-2">
-                <.icon name="hero-plus" class="size-5" />
-                New Client
-              </.button>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto">
+              <.table
+                id="clients"
+                rows={@streams.clients}
+                row_click={fn {_id, client} -> JS.navigate(~p"/clients/#{client}") end}
+              >
+                <:col :let={{_id, client}} label="Client">
+                  <div class="flex items-center gap-3">
+                    <div class="avatar placeholder">
+                      <div class="bg-neutral text-neutral-content rounded-full w-10">
+                        <span class="text-sm font-semibold">{String.first(client.name)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">{client.name}</div>
+                      <%= if client.contact_email do %>
+                        <div class="text-sm opacity-70 flex items-center gap-1">
+                          <.icon name="hero-envelope" class="size-3" />
+                          <a href={"mailto:#{client.contact_email}"} class="link link-primary">
+                            {client.contact_email}
+                          </a>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </:col>
+                <:col :let={{_id, client}} label="Projects">
+                  <div class="badge badge-secondary">
+                    <.icon name="hero-folder" class="size-3 mr-1" />
+                    {length(client.projects || [])} project<%= if length(client.projects || []) != 1, do: "s" %>
+                  </div>
+                </:col>
+                <:col :let={{_id, client}} label="Status">
+                  <%= if client.active do %>
+                    <div class="badge badge-success gap-1">
+                      <.icon name="hero-check-circle" class="size-3" />
+                      Active
+                    </div>
+                  <% else %>
+                    <div class="badge badge-ghost gap-1">
+                      <.icon name="hero-pause-circle" class="size-3" />
+                      Inactive
+                    </div>
+                  <% end %>
+                </:col>
+                <:action :let={{_id, client}}>
+                  <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                      <.icon name="hero-ellipsis-vertical" class="size-4" />
+                    </div>
+                    <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                      <li>
+                        <.link navigate={~p"/clients/#{client}"} class="flex items-center gap-2">
+                          <.icon name="hero-eye" class="size-4" />
+                          View
+                        </.link>
+                      </li>
+                      <li>
+                        <.link navigate={~p"/clients/#{client}/edit"} class="flex items-center gap-2">
+                          <.icon name="hero-pencil-square" class="size-4" />
+                          Edit
+                        </.link>
+                      </li>
+                      <li>
+                        <.link
+                          phx-click={JS.push("delete", value: %{id: client.id}) |> hide("#clients-#{client.id}")}
+                          data-confirm="Are you sure? This will also delete all associated projects and time entries."
+                          class="flex items-center gap-2 text-error"
+                        >
+                          <.icon name="hero-trash" class="size-4" />
+                          Delete
+                        </.link>
+                      </li>
+                    </ul>
+                  </div>
+                </:action>
+              </.table>
             </div>
-          </div>
-          
-          <div class="overflow-x-auto">
-            <.table
-              id="clients"
-              rows={@streams.clients}
-              row_click={fn {_id, client} -> JS.navigate(~p"/clients/#{client}") end}
-            >
-              <:col :let={{_id, client}} label="Name">
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-building-office" class="size-5 text-gray-400" />
-                  <span class="font-medium text-gray-900">{client.name}</span>
-                </div>
-              </:col>
-              <:col :let={{_id, client}} label="Contact Email">
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-envelope" class="size-4 text-gray-400" />
-                  <a href={"mailto:#{client.contact_email}"} class="text-blue-600 hover:text-blue-800">
-                    {client.contact_email || "-"}
-                  </a>
-                </div>
-              </:col>
-              <:col :let={{_id, client}} label="Projects">
-                <span class="text-gray-600">
-                  {length(client.projects || [])} projects
-                </span>
-              </:col>
-              <:col :let={{_id, client}} label="Status">
-                <%= if client.active do %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
-                <% else %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Inactive
-                  </span>
-                <% end %>
-              </:col>
-              <:action :let={{_id, client}}>
-                <div class="flex items-center gap-2">
-                  <.link 
-                    navigate={~p"/clients/#{client}/edit"}
-                    class="text-blue-600 hover:text-blue-800"
-                  >
-                    <.icon name="hero-pencil-square" class="size-4" />
-                  </.link>
-                  <.link
-                    phx-click={JS.push("delete", value: %{id: client.id}) |> hide("#clients-#{client.id}")}
-                    data-confirm="Are you sure?"
-                    class="text-red-600 hover:text-red-800"
-                  >
-                    <.icon name="hero-trash" class="size-4" />
-                  </.link>
-                </div>
-              </:action>
-            </.table>
           </div>
         </div>
       </div>

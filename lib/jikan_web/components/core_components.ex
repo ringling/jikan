@@ -90,11 +90,21 @@ defmodule JikanWeb.CoreComponents do
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :string
-  attr :variant, :string, values: ~w(primary)
+  attr :variant, :string, values: ~w(primary secondary accent success warning error ghost outline)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+    variants = %{
+      "primary" => "btn-primary", 
+      "secondary" => "btn-secondary",
+      "accent" => "btn-accent",
+      "success" => "btn-success",
+      "warning" => "btn-warning",
+      "error" => "btn-error",
+      "ghost" => "btn-ghost",
+      "outline" => "btn-outline",
+      nil => "btn-primary"
+    }
 
     assigns =
       assign_new(assigns, :class, fn ->
@@ -185,20 +195,19 @@ defmodule JikanWeb.CoreComponents do
       end)
 
     ~H"""
-    <div class="fieldset mb-2">
-      <label>
+    <div class="form-control">
+      <label class="label cursor-pointer">
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
-        <span class="label">
-          <input
-            type="checkbox"
-            id={@id}
-            name={@name}
-            value="true"
-            checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
-            {@rest}
-          />{@label}
-        </span>
+        <span class="label-text">{@label}</span>
+        <input
+          type="checkbox"
+          id={@id}
+          name={@name}
+          value="true"
+          checked={@checked}
+          class={[@class || "checkbox checkbox-primary", @errors != [] && "checkbox-error"]}
+          {@rest}
+        />
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
@@ -207,20 +216,20 @@ defmodule JikanWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <select
-          id={@id}
-          name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
-          multiple={@multiple}
-          {@rest}
-        >
-          <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
-        </select>
+    <div class="form-control w-full">
+      <label class="label">
+        <span :if={@label} class="label-text">{@label}</span>
       </label>
+      <select
+        id={@id}
+        name={@name}
+        class={[@class || "select select-bordered w-full", @errors != [] && (@error_class || "select-error")]}
+        multiple={@multiple}
+        {@rest}
+      >
+        <option :if={@prompt} value="" disabled selected>{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
+      </select>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -228,19 +237,19 @@ defmodule JikanWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <textarea
-          id={@id}
-          name={@name}
-          class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
-          ]}
-          {@rest}
-        >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
+    <div class="form-control w-full">
+      <label class="label">
+        <span :if={@label} class="label-text">{@label}</span>
       </label>
+      <textarea
+        id={@id}
+        name={@name}
+        class={[
+          @class || "textarea textarea-bordered w-full",
+          @errors != [] && (@error_class || "textarea-error")
+        ]}
+        {@rest}
+      >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -249,21 +258,21 @@ defmodule JikanWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <input
-          type={@type}
-          name={@name}
-          id={@id}
-          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-          class={[
-            @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
-          ]}
-          {@rest}
-        />
+    <div class="form-control w-full">
+      <label class="label">
+        <span :if={@label} class="label-text">{@label}</span>
       </label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          @class || "input input-bordered w-full",
+          @errors != [] && (@error_class || "input-error")
+        ]}
+        {@rest}
+      />
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -288,17 +297,21 @@ defmodule JikanWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4"]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8">
-          {render_slot(@inner_block)}
-        </h1>
-        <p :if={@subtitle != []} class="text-sm text-base-content/70">
-          {render_slot(@subtitle)}
-        </p>
+    <div class="hero bg-base-200 rounded-box mb-6">
+      <div class="hero-content text-center py-8">
+        <div class="max-w-md">
+          <h1 class="text-3xl font-bold">
+            {render_slot(@inner_block)}
+          </h1>
+          <p :if={@subtitle != []} class="py-2 text-base-content/70">
+            {render_slot(@subtitle)}
+          </p>
+          <div :if={@actions != []} class="mt-4">
+            {render_slot(@actions)}
+          </div>
+        </div>
       </div>
-      <div class="flex-none">{render_slot(@actions)}</div>
-    </header>
+    </div>
     """
   end
 
@@ -381,14 +394,18 @@ defmodule JikanWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
-          <div>{render_slot(item)}</div>
-        </div>
-      </li>
-    </ul>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-0">
+        <ul class="menu">
+          <li :for={item <- @item} class="border-b border-base-200 last:border-b-0">
+            <div class="flex flex-col items-start p-4">
+              <div class="font-semibold text-base">{item.title}</div>
+              <div class="text-sm text-base-content/70">{render_slot(item)}</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
     """
   end
 

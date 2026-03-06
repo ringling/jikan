@@ -8,55 +8,75 @@ defmodule JikanWeb.ClientLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="max-w-4xl">
-        <div class="mb-8">
-          <.link navigate={return_path(@return_to, @client)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
-            <.icon name="hero-arrow-left" class="size-4" />
-            Back
-          </.link>
-          
-          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <.icon name="hero-building-office" class="size-8" />
-            {@page_title}
-          </h1>
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <.link navigate={return_path(@return_to, @client)} class="btn btn-ghost btn-sm gap-2">
+                <.icon name="hero-arrow-left" class="size-4" />
+                Back
+              </.link>
+            </li>
+          </ul>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6">
-            <.form for={@form} id="client-form" phx-change="validate" phx-submit="save" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-2">
+        <.header>
+          <.icon name="hero-building-office" class="size-8 inline" /> {@page_title}
+          <:subtitle>
+            <%= if @live_action == :new do %>
+              Add a new client to start tracking projects and time
+            <% else %>
+              Update the client information and settings
+            <% end %>
+          </:subtitle>
+        </.header>
+        
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <.form for={@form} id="client-form" phx-change="validate" phx-submit="save">
+              <div class="space-y-6">
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:name]} 
                     type="text" 
                     label="Company Name" 
                     placeholder="Enter company name"
                   />
+                  <label class="label">
+                    <span class="label-text-alt">This will be used in project names and time entries</span>
+                  </label>
                 </div>
                 
-                <div class="col-span-2">
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:contact_email]} 
                     type="email" 
                     label="Contact Email" 
                     placeholder="contact@company.com"
                   />
+                  <label class="label">
+                    <span class="label-text-alt">Primary contact email for communications</span>
+                  </label>
                 </div>
                 
-                <div class="col-span-2">
+                <div class="form-control">
                   <.input 
                     field={@form[:active]} 
                     type="checkbox" 
                     label="Active client" 
                   />
+                  <label class="label">
+                    <span class="label-text-alt">Only active clients can have new projects and time entries</span>
+                  </label>
                 </div>
               </div>
               
-              <div class="flex items-center justify-end gap-4 pt-4 border-t">
-                <.button navigate={return_path(@return_to, @client)} class="btn-outline">
+              <div class="card-actions justify-end mt-8">
+                <.button variant="ghost" navigate={return_path(@return_to, @client)} class="gap-2">
+                  <.icon name="hero-x-mark" class="size-4" />
                   Cancel
                 </.button>
-                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                <.button type="submit" phx-disable-with="Saving..." variant="primary" class="gap-2">
                   <.icon name="hero-check" class="size-5" />
                   Save Client
                 </.button>

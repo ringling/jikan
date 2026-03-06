@@ -8,29 +8,39 @@ defmodule JikanWeb.TimeEntryLive.Form do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="max-w-4xl">
-        <div class="mb-8">
-          <.link navigate={return_path(@return_to, @time_entry)} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
-            <.icon name="hero-arrow-left" class="size-4" />
-            Back
-          </.link>
-          
-          <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <.icon name="hero-clock" class="size-8" />
-            {@page_title}
-          </h1>
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <.link navigate={return_path(@return_to, @time_entry)} class="btn btn-ghost btn-sm gap-2">
+                <.icon name="hero-arrow-left" class="size-4" />
+                Back
+              </.link>
+            </li>
+          </ul>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6">
-            <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save" class="space-y-6">
+        <.header>
+          <.icon name="hero-clock" class="size-8 inline" /> {@page_title}
+          <:subtitle>
+            <%= if @live_action == :new do %>
+              Create a new time entry for your project work
+            <% else %>
+              Modify this time entry's details
+            <% end %>
+          </:subtitle>
+        </.header>
+        
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <.form for={@form} id="time_entry-form" phx-change="validate" phx-submit="save">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-2">
                   <.input 
                     field={@form[:project_id]} 
                     type="select" 
                     label="Project" 
-                    options={Enum.map(@projects, &{&1.name, &1.id})}
+                    options={Enum.map(@projects, &{"#{&1.name} - #{&1.client.name}", &1.id})}
                     prompt="Choose a project"
                   />
                 </div>
@@ -44,28 +54,38 @@ defmodule JikanWeb.TimeEntryLive.Form do
                   />
                 </div>
                 
-                <div>
+                <div class="form-control w-full">
                   <.input field={@form[:date]} type="date" label="Date" />
                 </div>
                 
-                <div>
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:duration_minutes]} 
                     type="number" 
                     label="Duration (minutes)" 
                     placeholder="90"
+                    min="1"
                   />
+                  <label class="label">
+                    <span class="label-text-alt">Enter total work time in minutes</span>
+                  </label>
                 </div>
                 
-                <div>
+                <div class="form-control w-full">
                   <.input field={@form[:start_time]} type="time" label="Start Time (optional)" />
+                  <label class="label">
+                    <span class="label-text-alt">When you started working</span>
+                  </label>
                 </div>
                 
-                <div>
+                <div class="form-control w-full">
                   <.input field={@form[:end_time]} type="time" label="End Time (optional)" />
+                  <label class="label">
+                    <span class="label-text-alt">When you finished working</span>
+                  </label>
                 </div>
                 
-                <div>
+                <div class="form-control w-full">
                   <.input 
                     field={@form[:pause_duration_minutes]} 
                     type="number" 
@@ -73,19 +93,22 @@ defmodule JikanWeb.TimeEntryLive.Form do
                     placeholder="0"
                     min="0"
                   />
-                  <p class="text-xs text-gray-500 mt-1">Lunch breaks or other pauses</p>
+                  <label class="label">
+                    <span class="label-text-alt">Lunch breaks or other pauses</span>
+                  </label>
                 </div>
                 
-                <div class="col-span-2">
+                <div class="form-control">
                   <.input field={@form[:billable]} type="checkbox" label="Mark as billable" />
                 </div>
               </div>
               
-              <div class="flex items-center justify-end gap-4 pt-4 border-t">
-                <.button navigate={return_path(@return_to, @time_entry)} class="btn-outline">
+              <div class="card-actions justify-end mt-8">
+                <.button variant="ghost" navigate={return_path(@return_to, @time_entry)} class="gap-2">
+                  <.icon name="hero-x-mark" class="size-4" />
                   Cancel
                 </.button>
-                <.button phx-disable-with="Saving..." variant="primary" class="flex items-center gap-2">
+                <.button type="submit" phx-disable-with="Saving..." variant="primary" class="gap-2">
                   <.icon name="hero-check" class="size-5" />
                   Save Entry
                 </.button>

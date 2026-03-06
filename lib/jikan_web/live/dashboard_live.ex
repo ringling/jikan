@@ -287,146 +287,181 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-        <.icon name="hero-home" class="size-8" />
-        Dashboard
-      </h1>
+    <div class="p-6">
+      <div class="hero bg-base-200 rounded-box mb-6">
+        <div class="hero-content text-center">
+          <div class="max-w-md">
+            <h1 class="text-4xl font-bold flex items-center justify-center gap-3">
+              <.icon name="hero-home" class="size-10" />
+              Dashboard
+            </h1>
+            <p class="py-2 text-base-content/70">Track your time and manage your projects</p>
+          </div>
+        </div>
+      </div>
       
       <!-- Running Timer Widget -->
-      <div :if={@running_timer} class={"mb-8 rounded-lg p-6 border-2 #{if @running_timer.paused_at, do: "bg-yellow-50 border-yellow-200", else: "bg-blue-50 border-blue-200"}"}>
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class={"text-lg font-semibold flex items-center gap-2 #{if @running_timer.paused_at, do: "text-yellow-900", else: "text-blue-900"}"}>
-              <%= if @running_timer.paused_at do %>
-                <.icon name="hero-pause-circle" class="size-6" />
-                Timer Paused
-              <% else %>
-                <.icon name="hero-play-circle" class="size-6" />
-                Timer Running
-              <% end %>
-            </h3>
-            <p class={"#{if @running_timer.paused_at, do: "text-yellow-700", else: "text-blue-700"}"}>
-              <%= @running_timer.project.name %> - <%= @running_timer.project.client.name %>
-            </p>
-            <p :if={@running_timer.description} class={"text-sm mt-1 #{if @running_timer.paused_at, do: "text-yellow-600", else: "text-blue-600"}"}>
-              <%= @running_timer.description %>
-            </p>
-          </div>
-          <div class="text-right">
-            <div class={"text-3xl font-mono font-bold #{if @running_timer.paused_at, do: "text-yellow-900", else: "text-blue-900"}"}>
-              <%= format_duration(@elapsed) %>
+      <div :if={@running_timer} class={"card #{if @running_timer.paused_at, do: "bg-warning text-warning-content", else: "bg-info text-info-content"} mb-6 shadow-lg"}>
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="card-title text-2xl flex items-center gap-3">
+                <%= if @running_timer.paused_at do %>
+                  <.icon name="hero-pause-circle" class="size-8" />
+                  Timer Paused
+                <% else %>
+                  <.icon name="hero-play-circle" class="size-8" />
+                  Timer Running
+                <% end %>
+              </h2>
+              <p class="text-lg opacity-90">
+                <%= @running_timer.project.name %> - <%= @running_timer.project.client.name %>
+              </p>
+              <p :if={@running_timer.description} class="opacity-80 mt-1">
+                <%= @running_timer.description %>
+              </p>
             </div>
-            <div class="mt-2 flex items-center gap-2">
-              <%= if @running_timer.paused_at do %>
+            <div class="text-right">
+              <div class="text-5xl font-mono font-bold countdown">
+                <%= format_duration(@elapsed) %>
+              </div>
+              <div class="card-actions justify-end mt-4">
+                <%= if @running_timer.paused_at do %>
+                  <button 
+                    phx-click="resume_timer"
+                    class="btn btn-success gap-2"
+                  >
+                    <.icon name="hero-play" class="size-5" />
+                    Resume
+                  </button>
+                <% else %>
+                  <button 
+                    phx-click="pause_timer"
+                    class="btn btn-warning gap-2"
+                  >
+                    <.icon name="hero-pause" class="size-5" />
+                    Pause
+                  </button>
+                <% end %>
                 <button 
-                  phx-click="resume_timer"
-                  class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center gap-2"
+                  phx-click="stop_timer"
+                  class="btn btn-error gap-2"
                 >
-                  <.icon name="hero-play" class="size-5" />
-                  Resume
+                  <.icon name="hero-stop-circle" class="size-5" />
+                  Stop
                 </button>
-              <% else %>
-                <button 
-                  phx-click="pause_timer"
-                  class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition flex items-center gap-2"
-                >
-                  <.icon name="hero-pause" class="size-5" />
-                  Pause
-                </button>
-              <% end %>
-              <button 
-                phx-click="stop_timer"
-                class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center gap-2"
-              >
-                <.icon name="hero-stop-circle" class="size-5" />
-                Stop
-              </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Start Timer Form (when no timer running) -->
-      <div :if={!@running_timer && length(@projects) > 0} class="mb-8 bg-gray-50 rounded-lg p-6">
-        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-          <.icon name="hero-play" class="size-5" />
-          Start Timer
-        </h3>
-        <form phx-submit="start_timer" class="flex gap-4">
-          <select name="project_id" required class="flex-1 rounded border-gray-300">
-            <option value="">Select a project...</option>
-            <%= for project <- @projects do %>
-              <option value={project.id}>
-                <%= project.name %> (<%= project.client.name %>)
-              </option>
-            <% end %>
-          </select>
-          <input 
-            type="text" 
-            name="description" 
-            placeholder="What are you working on?" 
-            class="flex-1 rounded border-gray-300"
-          />
-          <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition flex items-center gap-2">
-            <.icon name="hero-play-circle" class="size-5" />
-            Start
-          </button>
-        </form>
+      <div :if={!@running_timer && length(@projects) > 0} class="card bg-base-100 shadow-lg mb-6">
+        <div class="card-body">
+          <h2 class="card-title text-xl flex items-center gap-2">
+            <.icon name="hero-play" class="size-6" />
+            Start Timer
+          </h2>
+          <form phx-submit="start_timer" class="form-control w-full">
+            <div class="flex flex-col lg:flex-row gap-4">
+              <div class="form-control w-full lg:w-1/2">
+                <label class="label">
+                  <span class="label-text">Project</span>
+                </label>
+                <select name="project_id" required class="select select-bordered w-full">
+                  <option disabled selected value="">Select a project...</option>
+                  <%= for project <- @projects do %>
+                    <option value={project.id}>
+                      <%= project.name %> (<%= project.client.name %>)
+                    </option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="form-control w-full lg:w-1/2">
+                <label class="label">
+                  <span class="label-text">Description</span>
+                </label>
+                <input 
+                  type="text" 
+                  name="description" 
+                  placeholder="What are you working on?" 
+                  class="input input-bordered w-full"
+                />
+              </div>
+            </div>
+            <div class="card-actions justify-end mt-4">
+              <button type="submit" class="btn btn-primary gap-2">
+                <.icon name="hero-play-circle" class="size-5" />
+                Start Timer
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- Today's Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center gap-2 mb-1">
-            <.icon name="hero-clock" class="size-5 text-gray-400" />
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Hours</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-primary">
+              <.icon name="hero-clock" class="size-8" />
+            </div>
+            <div class="stat-title">Today's Hours</div>
+            <div class="stat-value text-primary">
+              <%= format_minutes(@today_summary.total_minutes) %>
+            </div>
+            <div class="stat-desc">Time tracked today</div>
           </div>
-          <p class="text-3xl font-bold text-gray-900 mt-2">
-            <%= format_minutes(@today_summary.total_minutes) %>
-          </p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center gap-2 mb-1">
-            <.icon name="hero-document-text" class="size-5 text-gray-400" />
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Today's Entries</h3>
+        
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-secondary">
+              <.icon name="hero-document-text" class="size-8" />
+            </div>
+            <div class="stat-title">Today's Entries</div>
+            <div class="stat-value text-secondary">
+              <%= @today_summary.entry_count %>
+            </div>
+            <div class="stat-desc">Entries logged today</div>
           </div>
-          <p class="text-3xl font-bold text-gray-900 mt-2">
-            <%= @today_summary.entry_count %>
-          </p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center gap-2 mb-1">
-            <.icon name="hero-calendar-days" class="size-5 text-gray-400" />
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Week Total</h3>
+        
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-accent">
+              <.icon name="hero-calendar-days" class="size-8" />
+            </div>
+            <div class="stat-title">Week Total</div>
+            <div class="stat-value text-accent">
+              <%= format_minutes(@weekly_summary.total_minutes) %>
+            </div>
+            <div class="stat-desc">Hours this week</div>
           </div>
-          <p class="text-3xl font-bold text-gray-900 mt-2">
-            <%= format_minutes(@weekly_summary.total_minutes) %>
-          </p>
         </div>
       </div>
 
       <!-- This Week's Hours -->
-      <div class="bg-white rounded-lg shadow mb-8">
-        <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <.icon name="hero-chart-bar" class="size-5" />
+      <div class="card bg-base-100 shadow-lg mb-6">
+        <div class="card-body">
+          <h2 class="card-title text-xl flex items-center gap-2">
+            <.icon name="hero-chart-bar" class="size-6" />
             This Week's Hours
-          </h3>
-          <div class="space-y-3">
+          </h2>
+          <div class="space-y-4 mt-4">
             <%= for day_data <- @weekly_summary.daily_data do %>
               <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-600">
-                  <%= Calendar.strftime(day_data.date, "%A, %B %d") %>
+                <span class="text-sm font-medium w-32">
+                  <%= Calendar.strftime(day_data.date, "%A, %b %d") %>
                 </span>
-                <div class="flex items-center gap-4">
-                  <div class="w-48 bg-gray-200 rounded-full h-2">
-                    <div 
-                      class="bg-blue-600 h-2 rounded-full"
-                      style={"width: #{min(100, day_data.total_minutes / 480 * 100)}%"}
-                    ></div>
-                  </div>
-                  <span class="text-sm font-semibold text-gray-900 w-16 text-right">
+                <div class="flex items-center gap-4 flex-1">
+                  <progress 
+                    class="progress progress-primary w-48" 
+                    value={day_data.total_minutes} 
+                    max="480"
+                  ></progress>
+                  <span class="text-sm font-semibold w-16 text-right badge badge-primary badge-outline">
                     <%= format_minutes(day_data.total_minutes) %>
                   </span>
                 </div>
@@ -437,28 +472,32 @@ defmodule JikanWeb.DashboardLive do
       </div>
 
       <!-- Quick Entry Form -->
-      <div :if={length(@projects) > 0} class="bg-white rounded-lg shadow mb-8">
-        <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <.icon name="hero-plus-circle" class="size-5" />
+      <div :if={length(@projects) > 0} class="card bg-base-100 shadow-lg mb-6">
+        <div class="card-body">
+          <h2 class="card-title text-xl flex items-center gap-2">
+            <.icon name="hero-plus-circle" class="size-6" />
             Quick Add Time Entry
-          </h3>
+          </h2>
           <.form for={@quick_entry_form} phx-submit="quick_add" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <div class="form-control w-full">
+                <label class="label">
+                  <span class="label-text">Date</span>
+                </label>
                 <input 
                   type="date" 
                   name="time_entry[date]" 
                   value={Date.utc_today()} 
                   required 
-                  class="w-full rounded border-gray-300"
+                  class="input input-bordered w-full"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                <select name="time_entry[project_id]" required class="w-full rounded border-gray-300">
-                  <option value="">Select a project...</option>
+              <div class="form-control w-full">
+                <label class="label">
+                  <span class="label-text">Project</span>
+                </label>
+                <select name="time_entry[project_id]" required class="select select-bordered w-full">
+                  <option disabled selected value="">Select a project...</option>
                   <%= for project <- @projects do %>
                     <option value={project.id}>
                       <%= project.name %> (<%= project.client.name %>)
@@ -466,38 +505,44 @@ defmodule JikanWeb.DashboardLive do
                   <% end %>
                 </select>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+              <div class="form-control w-full">
+                <label class="label">
+                  <span class="label-text">Duration (minutes)</span>
+                </label>
                 <input 
                   type="number" 
                   name="time_entry[duration_minutes]" 
                   min="1"
                   required 
                   placeholder="90"
-                  class="w-full rounded border-gray-300"
+                  class="input input-bordered w-full"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <div class="form-control w-full">
+                <label class="label">
+                  <span class="label-text">Description</span>
+                </label>
                 <input 
                   type="text" 
                   name="time_entry[description]" 
                   placeholder="What did you work on?"
-                  class="w-full rounded border-gray-300"
+                  class="input input-bordered w-full"
                 />
               </div>
             </div>
-            <div class="flex items-center gap-4">
-              <label class="flex items-center">
-                <input 
-                  type="checkbox" 
-                  name="time_entry[billable]" 
-                  checked 
-                  class="rounded border-gray-300 text-blue-600"
-                />
-                <span class="ml-2 text-sm text-gray-700">Billable</span>
-              </label>
-              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition flex items-center gap-2">
+            <div class="flex items-center justify-between mt-6">
+              <div class="form-control">
+                <label class="label cursor-pointer gap-2">
+                  <input 
+                    type="checkbox" 
+                    name="time_entry[billable]" 
+                    checked 
+                    class="checkbox checkbox-primary"
+                  />
+                  <span class="label-text">Billable</span>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary gap-2">
                 <.icon name="hero-plus" class="size-5" />
                 Add Entry
               </button>
@@ -507,65 +552,92 @@ defmodule JikanWeb.DashboardLive do
       </div>
 
       <!-- Recent Entries -->
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-6">
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold flex items-center gap-2">
-              <.icon name="hero-list-bullet" class="size-5" />
+            <h2 class="card-title text-xl flex items-center gap-2">
+              <.icon name="hero-list-bullet" class="size-6" />
               Recent Entries
-            </h3>
-            <.link navigate={~p"/time-entries"} class="text-blue-600 hover:text-blue-700 text-sm">
-              View all →
+            </h2>
+            <.link navigate={~p"/time-entries"} class="btn btn-ghost btn-sm gap-2">
+              View all
+              <.icon name="hero-arrow-right" class="size-4" />
             </.link>
           </div>
           
           <% entries_empty = length(@recent_entries) == 0 %>
-          <div :if={entries_empty} class="text-center py-8 text-gray-500">
-            No time entries yet. Start tracking your time!
+          <div :if={entries_empty} class="text-center py-12">
+            <.icon name="hero-clock" class="size-16 mx-auto text-base-300 mb-4" />
+            <p class="text-base-content/70 text-lg mb-2">No time entries yet</p>
+            <p class="text-base-content/50">Start tracking your time to see recent entries here!</p>
           </div>
           
           <div :if={!entries_empty} class="space-y-3">
             <%= for entry <- @recent_entries do %>
-              <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                      <span 
-                        class="inline-block w-3 h-3 rounded-full"
-                        style={"background-color: #{entry.project.color}"}
-                      ></span>
-                      <span class="font-medium text-gray-900">
-                        <%= entry.project.name %>
-                      </span>
-                      <span class="text-gray-500 text-sm">
-                        • <%= entry.project.client.name %>
-                      </span>
+              <div class="card bg-base-200 hover:bg-base-300 transition-colors">
+                <div class="card-body p-4">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-3 mb-2">
+                        <div class="indicator">
+                          <span 
+                            class="indicator-item badge badge-sm"
+                            style={"background-color: #{entry.project.color}"}
+                          ></span>
+                          <div class="avatar placeholder">
+                            <div class="bg-neutral text-neutral-content rounded-full w-8">
+                              <span class="text-xs"><%= String.first(entry.project.name) %></span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <span class="font-semibold">
+                            <%= entry.project.name %>
+                          </span>
+                          <span class="text-base-content/70 text-sm ml-2">
+                            • <%= entry.project.client.name %>
+                          </span>
+                        </div>
+                      </div>
+                      <p :if={entry.description} class="text-sm text-base-content/80 mb-2 ml-11">
+                        <%= entry.description %>
+                      </p>
+                      <div class="flex items-center gap-3 ml-11">
+                        <div class="badge badge-outline badge-sm">
+                          <%= entry.date %>
+                        </div>
+                        <div class="badge badge-primary badge-sm">
+                          <%= format_minutes(entry.duration_minutes) %>
+                        </div>
+                        <div class={"badge badge-sm #{if entry.billable, do: "badge-success", else: "badge-ghost"}"}>
+                          <%= if entry.billable, do: "Billable", else: "Non-billable" %>
+                        </div>
+                      </div>
                     </div>
-                    <p :if={entry.description} class="text-sm text-gray-600 mt-1">
-                      <%= entry.description %>
-                    </p>
-                    <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                      <span><%= entry.date %></span>
-                      <span><%= format_minutes(entry.duration_minutes) %></span>
-                      <span :if={entry.billable} class="text-green-600">Billable</span>
-                      <span :if={!entry.billable} class="text-gray-400">Non-billable</span>
+                    <div class="dropdown dropdown-end">
+                      <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                        <.icon name="hero-ellipsis-vertical" class="size-4" />
+                      </div>
+                      <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                        <li>
+                          <.link navigate={~p"/time-entries/#{entry.id}/edit"} class="flex items-center gap-2">
+                            <.icon name="hero-pencil" class="size-4" />
+                            Edit
+                          </.link>
+                        </li>
+                        <li>
+                          <button 
+                            phx-click="delete_entry"
+                            phx-value-id={entry.id}
+                            data-confirm="Are you sure?"
+                            class="flex items-center gap-2 text-error"
+                          >
+                            <.icon name="hero-trash" class="size-4" />
+                            Delete
+                          </button>
+                        </li>
+                      </ul>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <.link 
-                      navigate={~p"/time-entries/#{entry.id}/edit"}
-                      class="text-blue-600 hover:text-blue-700 text-sm"
-                    >
-                      Edit
-                    </.link>
-                    <button 
-                      phx-click="delete_entry"
-                      phx-value-id={entry.id}
-                      data-confirm="Are you sure?"
-                      class="text-red-600 hover:text-red-700 text-sm"
-                    >
-                      Delete
-                    </button>
                   </div>
                 </div>
               </div>
@@ -575,24 +647,28 @@ defmodule JikanWeb.DashboardLive do
       </div>
 
       <!-- Empty state for users without projects -->
-      <div :if={length(@projects) == 0} class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <p class="text-yellow-800">
-          You need to create clients and projects before you can start tracking time.
-        </p>
-        <%= if User.manager_or_above?(@current_user) do %>
-          <div class="mt-4 space-x-4">
-            <.link navigate={~p"/clients/new"} class="text-blue-600 hover:underline">
-              Create your first client →
-            </.link>
-            <.link navigate={~p"/projects/new"} class="text-blue-600 hover:underline">
-              Create your first project →
-            </.link>
+      <div :if={length(@projects) == 0} class="alert alert-warning">
+        <.icon name="hero-exclamation-triangle" class="size-6" />
+        <div>
+          <h3 class="font-bold">No Projects Available</h3>
+          <div class="text-sm">
+            You need to create clients and projects before you can start tracking time.
           </div>
-        <% else %>
-          <p class="text-sm text-yellow-700 mt-2">
-            Please contact your manager to set up clients and projects for you.
-          </p>
-        <% end %>
+          <%= if User.manager_or_above?(@current_user) do %>
+            <div class="flex gap-2 mt-3">
+              <.link navigate={~p"/clients/new"} class="btn btn-sm btn-primary">
+                Create Client
+              </.link>
+              <.link navigate={~p"/projects/new"} class="btn btn-sm btn-outline btn-primary">
+                Create Project
+              </.link>
+            </div>
+          <% else %>
+            <div class="text-xs mt-2 opacity-80">
+              Please contact your manager to set up clients and projects for you.
+            </div>
+          <% end %>
+        </div>
       </div>
     </div>
     """

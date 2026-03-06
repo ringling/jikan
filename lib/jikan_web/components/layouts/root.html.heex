@@ -30,90 +30,140 @@
       })();
     </script>
   </head>
-  <body>
-    <ul class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8">
-      <div class="mr-8">
-        <.link href={~p"/"} class="text-2xl font-bold text-primary">時間 Jikan</.link>
+  <body class="min-h-screen bg-base-200">
+    <div class="navbar bg-base-100 shadow-lg">
+      <div class="navbar-start">
+        <.link href={~p"/"} class="btn btn-ghost text-xl text-primary font-bold">
+          時間 Jikan
+        </.link>
       </div>
+      
       <%= if @current_scope do %>
-        <div class="flex-1 flex items-center gap-4">
-          <li>
-            <.link href={~p"/dashboard"} class="font-semibold flex items-center gap-1">
-              <.icon name="hero-home" class="size-4" />
-              Dashboard
-            </.link>
-          </li>
-          <li>
-            <.link href={~p"/time-entries"} class="flex items-center gap-1">
-              <.icon name="hero-clock" class="size-4" />
-              Time Entries
-            </.link>
-          </li>
-          <%= if Jikan.Accounts.User.manager_or_above?(@current_scope.user) do %>
+        <div class="navbar-center hidden lg:flex">
+          <ul class="menu menu-horizontal px-1">
             <li>
-              <.link href={~p"/projects"} class="flex items-center gap-1">
-                <.icon name="hero-folder" class="size-4" />
-                Projects
+              <.link href={~p"/dashboard"} class="flex items-center gap-2">
+                <.icon name="hero-home" class="size-4" />
+                Dashboard
               </.link>
             </li>
             <li>
-              <.link href={~p"/clients"} class="flex items-center gap-1">
-                <.icon name="hero-user-group" class="size-4" />
-                Clients
+              <.link href={~p"/time-entries"} class="flex items-center gap-2">
+                <.icon name="hero-clock" class="size-4" />
+                Time Entries
               </.link>
             </li>
-            <%!-- TODO: Implement Reports page
-            <li>
-              <.link href={~p"/reports"}>Reports</.link>
-            </li>
-            --%>
-          <% end %>
-          <%!-- TODO: Implement Admin User Management
-          <%= if Jikan.Accounts.User.admin?(@current_scope.user) do %>
-            <li>
-              <.link href={~p"/admin/users"}>User Management</.link>
-            </li>
-          <% end %>
-          --%>
+            <%= if Jikan.Accounts.User.manager_or_above?(@current_scope.user) do %>
+              <li>
+                <.link href={~p"/projects"} class="flex items-center gap-2">
+                  <.icon name="hero-folder" class="size-4" />
+                  Projects
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/clients"} class="flex items-center gap-2">
+                  <.icon name="hero-user-group" class="size-4" />
+                  Clients
+                </.link>
+              </li>
+            <% end %>
+          </ul>
         </div>
-        <div class="flex items-center gap-4">
-          <li class="text-sm text-gray-600">
-            {@current_scope.user.email}
-            <span class="badge badge-sm ml-2">
-              {@current_scope.user.role}
-            </span>
-          </li>
-          <li>
-            <.link href={~p"/users/settings"} class="flex items-center gap-1">
-              <.icon name="hero-cog-6-tooth" class="size-4" />
-              Settings
-            </.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log-out"} method="delete" class="flex items-center gap-1">
-              <.icon name="hero-arrow-left-on-rectangle" class="size-4" />
-              Log out
-            </.link>
-          </li>
+        
+        <div class="navbar-end">
+          <!-- Mobile menu dropdown -->
+          <div class="dropdown dropdown-end lg:hidden">
+            <div tabindex="0" role="button" class="btn btn-ghost">
+              <.icon name="hero-bars-3" class="size-5" />
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+              <li>
+                <.link href={~p"/dashboard"} class="flex items-center gap-2">
+                  <.icon name="hero-home" class="size-4" />
+                  Dashboard
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/time-entries"} class="flex items-center gap-2">
+                  <.icon name="hero-clock" class="size-4" />
+                  Time Entries
+                </.link>
+              </li>
+              <%= if Jikan.Accounts.User.manager_or_above?(@current_scope.user) do %>
+                <li>
+                  <.link href={~p"/projects"} class="flex items-center gap-2">
+                    <.icon name="hero-folder" class="size-4" />
+                    Projects
+                  </.link>
+                </li>
+                <li>
+                  <.link href={~p"/clients"} class="flex items-center gap-2">
+                    <.icon name="hero-user-group" class="size-4" />
+                    Clients
+                  </.link>
+                </li>
+              <% end %>
+              <div class="divider"></div>
+              <li>
+                <.link href={~p"/users/settings"} class="flex items-center gap-2">
+                  <.icon name="hero-cog-6-tooth" class="size-4" />
+                  Settings
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log-out"} method="delete" class="flex items-center gap-2">
+                  <.icon name="hero-arrow-left-on-rectangle" class="size-4" />
+                  Log out
+                </.link>
+              </li>
+            </ul>
+          </div>
+          
+          <!-- Desktop user menu -->
+          <div class="dropdown dropdown-end hidden lg:block">
+            <div tabindex="0" role="button" class="btn btn-ghost flex items-center gap-2">
+              <div class="text-sm">
+                {@current_scope.user.email}
+                <div class="badge badge-sm">
+                  {@current_scope.user.role}
+                </div>
+              </div>
+              <.icon name="hero-chevron-down" class="size-4" />
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+              <li>
+                <.link href={~p"/users/settings"} class="flex items-center gap-2">
+                  <.icon name="hero-cog-6-tooth" class="size-4" />
+                  Settings
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log-out"} method="delete" class="flex items-center gap-2">
+                  <.icon name="hero-arrow-left-on-rectangle" class="size-4" />
+                  Log out
+                </.link>
+              </li>
+            </ul>
+          </div>
         </div>
       <% else %>
-        <div class="flex-1"></div>
-        <div class="flex items-center gap-4">
-          <li>
-            <.link href={~p"/users/register"} class="flex items-center gap-1">
+        <div class="navbar-end">
+          <div class="flex gap-2">
+            <.link href={~p"/users/register"} class="btn btn-ghost flex items-center gap-2">
               <.icon name="hero-user-plus" class="size-4" />
               Register
             </.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log-in"} class="flex items-center gap-1">
+            <.link href={~p"/users/log-in"} class="btn btn-primary flex items-center gap-2">
               <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
               Log in
             </.link>
-          </li>
+          </div>
         </div>
       <% end %>
-    </ul>
-    {@inner_content}
+    </div>
+    
+    <main class="container mx-auto">
+      {@inner_content}
+    </main>
   </body>
 </html>

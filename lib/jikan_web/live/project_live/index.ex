@@ -7,73 +7,102 @@ defmodule JikanWeb.ProjectLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-          <.icon name="hero-folder" class="size-8" />
-          Projects
-        </h1>
+      <div class="p-6">
+        <.header>
+          <.icon name="hero-folder" class="size-8 inline" /> Projects
+          <:subtitle>Manage your projects and track their progress</:subtitle>
+          <:actions>
+            <.button variant="primary" navigate={~p"/projects/new"} class="gap-2">
+              <.icon name="hero-plus" class="size-5" />
+              New Project
+            </.button>
+          </:actions>
+        </.header>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <p class="text-gray-600">Manage your projects and track their status</p>
-              <.button variant="primary" navigate={~p"/projects/new"} class="flex items-center gap-2">
-                <.icon name="hero-plus" class="size-5" />
-                New Project
-              </.button>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto">
+              <.table
+                id="projects"
+                rows={@streams.projects}
+                row_click={fn {_id, project} -> JS.navigate(~p"/projects/#{project}") end}
+              >
+                <:col :let={{_id, project}} label="Project">
+                  <div class="flex items-center gap-3">
+                    <div class="indicator">
+                      <span 
+                        class="indicator-item badge badge-sm"
+                        style={"background-color: #{project.color || "#666"}"}
+                      ></span>
+                      <div class="avatar placeholder">
+                        <div class="bg-neutral text-neutral-content rounded-full w-10">
+                          <span class="text-sm font-semibold">{String.first(project.name)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">{project.name}</div>
+                      <div class="text-sm opacity-70">{project.client.name}</div>
+                    </div>
+                  </div>
+                </:col>
+                <:col :let={{_id, project}} label="Description">
+                  <div class="max-w-xs">
+                    <span class="text-base-content">
+                      <%= if project.description && String.trim(project.description) != "" do %>
+                        {String.slice(project.description, 0, 50)}<%= if String.length(project.description) > 50, do: "..." %>
+                      <% else %>
+                        <span class="italic opacity-50">No description</span>
+                      <% end %>
+                    </span>
+                  </div>
+                </:col>
+                <:col :let={{_id, project}} label="Status">
+                  <%= if project.archived do %>
+                    <div class="badge badge-ghost gap-1">
+                      <.icon name="hero-archive-box" class="size-3" />
+                      Archived
+                    </div>
+                  <% else %>
+                    <div class="badge badge-success gap-1">
+                      <.icon name="hero-check-circle" class="size-3" />
+                      Active
+                    </div>
+                  <% end %>
+                </:col>
+                <:action :let={{_id, project}}>
+                  <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                      <.icon name="hero-ellipsis-vertical" class="size-4" />
+                    </div>
+                    <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                      <li>
+                        <.link navigate={~p"/projects/#{project}"} class="flex items-center gap-2">
+                          <.icon name="hero-eye" class="size-4" />
+                          View
+                        </.link>
+                      </li>
+                      <li>
+                        <.link navigate={~p"/projects/#{project}/edit"} class="flex items-center gap-2">
+                          <.icon name="hero-pencil-square" class="size-4" />
+                          Edit
+                        </.link>
+                      </li>
+                      <li>
+                        <.link
+                          phx-click={JS.push("delete", value: %{id: project.id}) |> hide("#projects-#{project.id}")}
+                          data-confirm="Are you sure? This will also delete all associated time entries."
+                          class="flex items-center gap-2 text-error"
+                        >
+                          <.icon name="hero-trash" class="size-4" />
+                          Delete
+                        </.link>
+                      </li>
+                    </ul>
+                  </div>
+                </:action>
+              </.table>
             </div>
-          </div>
-          
-          <div class="overflow-x-auto">
-            <.table
-              id="projects"
-              rows={@streams.projects}
-              row_click={fn {_id, project} -> JS.navigate(~p"/projects/#{project}") end}
-            >
-              <:col :let={{_id, project}} label="Name">
-                <div class="flex items-center gap-2">
-                  <span 
-                    class="inline-block w-3 h-3 rounded-full"
-                    style={"background-color: #{project.color || "#666"}"}
-                  ></span>
-                  <span class="font-medium text-gray-900">{project.name}</span>
-                </div>
-              </:col>
-              <:col :let={{_id, project}} label="Client">
-                <span class="text-gray-600">{project.client.name}</span>
-              </:col>
-              <:col :let={{_id, project}} label="Description">
-                <span class="text-gray-600">{project.description || "-"}</span>
-              </:col>
-              <:col :let={{_id, project}} label="Status">
-                <%= if project.archived do %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Archived
-                  </span>
-                <% else %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
-                <% end %>
-              </:col>
-              <:action :let={{_id, project}}>
-                <div class="flex items-center gap-2">
-                  <.link 
-                    navigate={~p"/projects/#{project}/edit"}
-                    class="text-blue-600 hover:text-blue-800"
-                  >
-                    <.icon name="hero-pencil-square" class="size-4" />
-                  </.link>
-                  <.link
-                    phx-click={JS.push("delete", value: %{id: project.id}) |> hide("#projects-#{project.id}")}
-                    data-confirm="Are you sure?"
-                    class="text-red-600 hover:text-red-800"
-                  >
-                    <.icon name="hero-trash" class="size-4" />
-                  </.link>
-                </div>
-              </:action>
-            </.table>
           </div>
         </div>
       </div>
