@@ -600,8 +600,16 @@ defmodule JikanWeb.DashboardLive do
                         <div class="badge badge-outline badge-sm">
                           <%= entry.date %>
                         </div>
-                        <div class="badge badge-primary badge-sm">
-                          <%= format_minutes(entry.duration_minutes) %>
+                        <div class="flex flex-col items-start">
+                          <div class="badge badge-primary badge-sm">
+                            <%= format_minutes(entry.duration_minutes) %>
+                          </div>
+                          <%= if entry.pause_duration_minutes && entry.pause_duration_minutes > 0 do %>
+                            <div class="badge badge-warning badge-xs mt-1">
+                              <.icon name="hero-pause-circle" class="size-3 mr-1" />
+                              <%= format_minutes(entry.pause_duration_minutes) %>
+                            </div>
+                          <% end %>
                         </div>
                         <div class={"badge badge-sm #{if entry.billable, do: "badge-success", else: "badge-ghost"}"}>
                           <%= if entry.billable, do: "Billable", else: "Non-billable" %>

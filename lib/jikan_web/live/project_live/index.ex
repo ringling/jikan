@@ -40,7 +40,7 @@ defmodule JikanWeb.ProjectLive.Index do
                     </div>
                   </div>
                 </:col>
-                <:col :let={{_id, project}} label="Description">
+                <:col :let={{_id, project}} label="Description" class="hidden lg:table-cell">
                   <div class="max-w-xs">
                     <span class="text-base-content">
                       <%= if project.description && String.trim(project.description) != "" do %>
@@ -51,7 +51,7 @@ defmodule JikanWeb.ProjectLive.Index do
                     </span>
                   </div>
                 </:col>
-                <:col :let={{_id, project}} label="Status">
+                <:col :let={{_id, project}} label="Status" class="hidden md:table-cell">
                   <%= if project.archived do %>
                     <div class="badge badge-ghost gap-1">
                       <.icon name="hero-archive-box" class="size-3" />

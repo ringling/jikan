@@ -40,11 +40,11 @@ defmodule JikanWeb.TimeEntryLive.Index do
                     </div>
                   </div>
                 </:col>
-                <:col :let={{_id, time_entry}} label="Description">
+                <:col :let={{_id, time_entry}} label="Description" class="hidden md:table-cell">
                   <span class="text-base-content">{time_entry.description || "-"}</span>
                 </:col>
                 <:col :let={{_id, time_entry}} label="Date">
-                  <div class="badge badge-outline">
+                  <div class="badge badge-outline whitespace-nowrap">
                     {Calendar.strftime(time_entry.date, "%b %d, %Y")}
                   </div>
                 </:col>
