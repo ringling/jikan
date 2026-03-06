@@ -50,6 +50,9 @@ RUN mkdir -p /app/data && chown nobody /app/data
 
 COPY --from=builder --chown=nobody:root /app/_build/prod/rel/jikan ./
 
+# Copy seed files to the release (they're not included by default)
+COPY --from=builder --chown=nobody:root /app/priv/repo/seeds*.exs /app/lib/jikan-0.1.0/priv/repo/
+
 USER nobody
 ENV HOME=/app
 

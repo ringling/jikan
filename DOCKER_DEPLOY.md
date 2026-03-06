@@ -297,6 +297,87 @@ docker volume create jikan_data
 
 ---
 
+## Verifying Volume Setup on VPS
+
+Docker named volumes are managed internally by Docker and not directly visible in your filesystem. Here's how to verify everything is working:
+
+### Check if volume exists and is configured correctly:
+
+```bash
+# List all Docker volumes
+docker volume ls | grep jikan
+
+# Inspect the volume (shows mount point and other details)
+docker volume inspect jikan_data
+```
+
+The output will show something like:
+```json
+[
+    {
+        "Name": "jikan_data",
+        "Driver": "local",
+        "Mountpoint": "/var/lib/docker/volumes/jikan_data/_data",
+        "Labels": {},
+        "Scope": "local"
+    }
+]
+```
+
+### Verify data is being persisted:
+
+```bash
+# After running the container, check if SQLite file exists
+sudo ls -la /var/lib/docker/volumes/jikan_data/_data/
+
+# Should show:
+# jikan.db
+# jikan.db-shm
+# jikan.db-wal
+```
+
+### Access the database directly (for debugging):
+
+```bash
+# Install sqlite3 if not present
+sudo apt-get install sqlite3  # Debian/Ubuntu
+sudo yum install sqlite       # RHEL/CentOS
+
+# Query the database directly
+sudo sqlite3 /var/lib/docker/volumes/jikan_data/_data/jikan.db ".tables"
+sudo sqlite3 /var/lib/docker/volumes/jikan_data/_data/jikan.db "SELECT COUNT(*) FROM users;"
+```
+
+### Alternative: Use a bind mount for easier access
+
+If you prefer direct filesystem access without sudo, use a bind mount instead:
+
+```bash
+# Create a local directory
+mkdir -p /home/youruser/jikan_data
+
+# Use this in your docker run command:
+-v /home/youruser/jikan_data:/app/data
+
+# Instead of:
+-v jikan_data:/app/data
+```
+
+### Backup the volume data:
+
+```bash
+# Option 1: Backup using docker
+docker run --rm -v jikan_data:/source -v $(pwd):/backup alpine tar czf /backup/jikan_backup.tar.gz -C /source .
+
+# Option 2: Direct copy (requires sudo)
+sudo tar czf jikan_backup.tar.gz -C /var/lib/docker/volumes/jikan_data/_data .
+
+# Restore from backup
+docker run --rm -v jikan_data:/target -v $(pwd):/backup alpine tar xzf /backup/jikan_backup.tar.gz -C /target
+```
+
+---
+
 ## Quick reference
 
 | Command | Purpose |
@@ -305,5 +386,8 @@ docker volume create jikan_data
 | `docker logs -f jikan` | Tail logs |
 | `docker exec -it jikan sh` | Shell into container |
 | `docker exec jikan /app/bin/jikan eval "Jikan.Release.migrate()"` | Run migrations manually |
+| `docker exec jikan /app/bin/jikan eval "Jikan.Release.seed(\"seeds_prod.exs\")"` | Run production seeds |
 | `docker images ringling/jikan` | Check image size |
-| `docker volume inspect jikan_data` | Inspect DB volume |
+| `docker volume ls` | List all volumes |
+| `docker volume inspect jikan_data` | Inspect DB volume (shows mount point) |
+| `sudo ls /var/lib/docker/volumes/jikan_data/_data/` | Check actual DB files |
