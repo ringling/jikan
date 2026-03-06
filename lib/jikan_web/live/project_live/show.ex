@@ -7,73 +7,121 @@ defmodule JikanWeb.ProjectLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div>
-        <div class="mb-8">
-          <.link navigate={~p"/projects"} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
-            <.icon name="hero-arrow-left" class="size-4" />
-            Back to Projects
-          </.link>
-          
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-4">
-              <span 
-                class="inline-block w-12 h-12 rounded-lg"
-                style={"background-color: #{@project.color || "#666"}"}
-              ></span>
-              <div>
-                <h1 class="text-3xl font-bold text-gray-900">
-                  {@project.name}
-                </h1>
-                <p class="text-gray-600 mt-1">
-                  {@project.description || "No description"}
-                </p>
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <.link navigate={~p"/projects"} class="btn btn-ghost btn-sm gap-2">
+                <.icon name="hero-arrow-left" class="size-4" />
+                Projects
+              </.link>
+            </li>
+            <li>Project Details</li>
+          </ul>
+        </div>
+        
+        <.header>
+          <div class="flex items-center gap-3">
+            <div class="avatar avatar-placeholder">
+              <div class="text-white w-12 rounded-full" style={"background-color: #{@project.color || "#666"}"}>
+                <span class="text-lg">{String.slice(@project.name, 0..1) |> String.upcase}</span>
               </div>
             </div>
-            
-            <.button variant="primary" navigate={~p"/projects/#{@project}/edit?return_to=show"} class="flex items-center gap-2">
+            <div>
+              <.icon name="hero-folder" class="size-8 inline" /> {@project.name}
+            </div>
+          </div>
+          <:subtitle>
+            {@project.description || "No description provided"}
+          </:subtitle>
+          <:actions>
+            <.button variant="primary" navigate={~p"/projects/#{@project}/edit?return_to=show"} class="gap-2">
               <.icon name="hero-pencil-square" class="size-5" />
               Edit Project
             </.button>
-          </div>
-        </div>
+          </:actions>
+        </.header>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Client</h3>
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-building-office" class="size-5 text-gray-400" />
-                  <p class="text-lg text-gray-900">{@project.client.name}</p>
-                </div>
-              </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Project Details Card -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title text-lg">
+                <.icon name="hero-information-circle" class="size-5" />
+                Project Information
+              </h2>
               
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                <div class="flex items-center gap-2">
+              <div class="space-y-4 mt-4">
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Client</div>
+                  <div class="flex items-center gap-3">
+                    <div class="avatar avatar-placeholder">
+                      <div class="bg-primary text-primary-content w-8 rounded-full">
+                        <span class="text-xs">{String.slice(@project.client.name, 0..1) |> String.upcase}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">{@project.client.name}</div>
+                      <%= if @project.client.contact_email do %>
+                        <div class="text-sm opacity-70">{@project.client.contact_email}</div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="divider my-2"></div>
+                
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Status</div>
                   <%= if @project.archived do %>
-                    <.icon name="hero-archive-box" class="size-5 text-gray-400" />
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    <div class="badge badge-ghost gap-1">
+                      <.icon name="hero-archive-box" class="size-3" />
                       Archived
-                    </span>
+                    </div>
                   <% else %>
-                    <.icon name="hero-check-circle" class="size-5 text-green-600" />
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <div class="badge badge-success gap-1">
+                      <.icon name="hero-check-circle" class="size-3" />
                       Active
-                    </span>
+                    </div>
                   <% end %>
                 </div>
-              </div>
-              
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Color</h3>
-                <div class="flex items-center gap-2">
-                  <span 
-                    class="inline-block w-6 h-6 rounded border border-gray-300"
-                    style={"background-color: #{@project.color || "#666"}"}
-                  ></span>
-                  <p class="text-lg text-gray-900">{@project.color || "Default"}</p>
+                
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Project Color</div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded border-2 border-base-300" style={"background-color: #{@project.color || "#666"}"}></div>
+                    <div class="font-mono text-sm">{@project.color || "#666666"}</div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick Actions Card -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title text-lg">
+                <.icon name="hero-bolt" class="size-5" />
+                Quick Actions
+              </h2>
+              
+              <div class="space-y-3 mt-4">
+                <.button variant="outline" navigate={~p"/time-entries/new?project_id=#{@project.id}"} class="w-full gap-2">
+                  <.icon name="hero-plus" class="size-4" />
+                  Add Time Entry for This Project
+                </.button>
+                
+                <.button variant="ghost" navigate={~p"/time-entries?project_id=#{@project.id}"} class="w-full gap-2">
+                  <.icon name="hero-clock" class="size-4" />
+                  View All Time Entries
+                </.button>
+                
+                <div class="divider my-2"></div>
+                
+                <.button variant="ghost" navigate={~p"/projects/#{@project}/edit"} class="w-full gap-2">
+                  <.icon name="hero-pencil-square" class="size-4" />
+                  Edit Project Details
+                </.button>
               </div>
             </div>
           </div>

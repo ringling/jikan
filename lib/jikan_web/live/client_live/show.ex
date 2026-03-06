@@ -7,77 +7,124 @@ defmodule JikanWeb.ClientLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div>
-        <div class="mb-8">
-          <.link navigate={~p"/clients"} class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4">
-            <.icon name="hero-arrow-left" class="size-4" />
-            Back to Clients
-          </.link>
-          
-          <div class="flex items-start justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <.icon name="hero-building-office" class="size-8" />
-                {@client.name}
-              </h1>
-              <p class="text-gray-600 mt-2">
-                Client Information
-              </p>
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="breadcrumbs text-sm mb-6">
+          <ul>
+            <li>
+              <.link navigate={~p"/clients"} class="btn btn-ghost btn-sm gap-2">
+                <.icon name="hero-arrow-left" class="size-4" />
+                Clients
+              </.link>
+            </li>
+            <li>Client Details</li>
+          </ul>
+        </div>
+        
+        <.header>
+          <div class="flex items-center gap-3">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-primary text-primary-content w-12 rounded-full">
+                <span class="text-lg">{String.slice(@client.name, 0..1) |> String.upcase}</span>
+              </div>
             </div>
-            
-            <.button variant="primary" navigate={~p"/clients/#{@client}/edit?return_to=show"} class="flex items-center gap-2">
+            <div>
+              <.icon name="hero-building-office" class="size-8 inline" /> {@client.name}
+            </div>
+          </div>
+          <:subtitle>
+            Client information and project details
+          </:subtitle>
+          <:actions>
+            <.button variant="primary" navigate={~p"/clients/#{@client}/edit?return_to=show"} class="gap-2">
               <.icon name="hero-pencil-square" class="size-5" />
               Edit Client
             </.button>
-          </div>
-        </div>
+          </:actions>
+        </.header>
         
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-6 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Company Name</h3>
-                <p class="text-lg font-medium text-gray-900">{@client.name}</p>
-              </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Client Details Card -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title text-lg">
+                <.icon name="hero-information-circle" class="size-5" />
+                Contact Information
+              </h2>
               
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Contact Email</h3>
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-envelope" class="size-5 text-gray-400" />
+              <div class="space-y-4 mt-4">
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Company Name</div>
+                  <div class="text-lg font-semibold">{@client.name}</div>
+                </div>
+                
+                <div class="divider my-2"></div>
+                
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Contact Email</div>
                   <%= if @client.contact_email do %>
-                    <a href={"mailto:#{@client.contact_email}"} class="text-lg text-blue-600 hover:text-blue-800">
-                      {@client.contact_email}
-                    </a>
+                    <div class="flex items-center gap-2">
+                      <.icon name="hero-envelope" class="size-4" />
+                      <a href={"mailto:#{@client.contact_email}"} class="link link-primary">
+                        {@client.contact_email}
+                      </a>
+                    </div>
                   <% else %>
-                    <p class="text-lg text-gray-900">No email provided</p>
+                    <div class="text-base opacity-60 italic">No email provided</div>
                   <% end %>
                 </div>
-              </div>
-              
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                <div class="flex items-center gap-2">
+                
+                <div>
+                  <div class="text-sm opacity-70 mb-2">Status</div>
                   <%= if @client.active do %>
-                    <.icon name="hero-check-circle" class="size-5 text-green-600" />
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <div class="badge badge-success gap-1">
+                      <.icon name="hero-check-circle" class="size-3" />
                       Active
-                    </span>
+                    </div>
                   <% else %>
-                    <.icon name="hero-x-circle" class="size-5 text-gray-400" />
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    <div class="badge badge-ghost gap-1">
+                      <.icon name="hero-pause-circle" class="size-3" />
                       Inactive
-                    </span>
+                    </div>
                   <% end %>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <!-- Projects & Quick Actions Card -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title text-lg">
+                <.icon name="hero-folder" class="size-5" />
+                Projects & Actions
+              </h2>
               
-              <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Projects</h3>
-                <div class="flex items-center gap-2">
-                  <.icon name="hero-folder" class="size-5 text-gray-400" />
-                  <p class="text-lg text-gray-900">
-                    {length(@client.projects || [])} active projects
-                  </p>
+              <div class="space-y-4 mt-4">
+                <div class="stat">
+                  <div class="stat-title">Active Projects</div>
+                  <div class="stat-value text-primary text-2xl">
+                    {length(@client.projects || [])}
+                  </div>
+                  <div class="stat-desc">Projects for this client</div>
+                </div>
+                
+                <div class="divider my-2"></div>
+                
+                <div class="space-y-3">
+                  <.button variant="outline" navigate={~p"/projects/new?client_id=#{@client.id}"} class="w-full gap-2">
+                    <.icon name="hero-plus" class="size-4" />
+                    Add New Project
+                  </.button>
+                  
+                  <.button variant="ghost" navigate={~p"/projects?client_id=#{@client.id}"} class="w-full gap-2">
+                    <.icon name="hero-folder" class="size-4" />
+                    View All Projects
+                  </.button>
+                  
+                  <.button variant="ghost" navigate={~p"/time-entries?client_id=#{@client.id}"} class="w-full gap-2">
+                    <.icon name="hero-clock" class="size-4" />
+                    View Time Entries
+                  </.button>
                 </div>
               </div>
             </div>

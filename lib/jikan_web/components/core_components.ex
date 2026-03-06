@@ -336,6 +336,7 @@ defmodule JikanWeb.CoreComponents do
 
   slot :col, required: true do
     attr :label, :string
+    attr :class, :string
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
@@ -350,7 +351,7 @@ defmodule JikanWeb.CoreComponents do
     <table class="table table-zebra">
       <thead>
         <tr>
-          <th :for={col <- @col}>{col[:label]}</th>
+          <th :for={col <- @col} class={col[:class]}>{col[:label]}</th>
           <th :if={@action != []}>
             <span class="sr-only">{gettext("Actions")}</span>
           </th>
@@ -361,7 +362,7 @@ defmodule JikanWeb.CoreComponents do
           <td
             :for={col <- @col}
             phx-click={@row_click && @row_click.(row)}
-            class={@row_click && "hover:cursor-pointer"}
+            class={[@row_click && "hover:cursor-pointer", col[:class]]}
           >
             {render_slot(col, @row_item.(row))}
           </td>
