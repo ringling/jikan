@@ -189,17 +189,17 @@ defmodule Jikan.Tracking do
   defp filter_by_month(query, %{"month" => month, "year" => year}) when month != "" and year != "" do
     month_int = String.to_integer(month)
     year_int = String.to_integer(year)
-    query |> where([t], fragment("CAST(strftime('%m', ?) AS INTEGER)", t.date) == ^month_int and fragment("CAST(strftime('%Y', ?) AS INTEGER)", t.date) == ^year_int)
+    query |> where([t], fragment("EXTRACT(MONTH FROM ?) = ?", t.date, ^month_int) and fragment("EXTRACT(YEAR FROM ?) = ?", t.date, ^year_int))
   end
   defp filter_by_month(query, %{"month" => month}) when month != "" do
     month_int = String.to_integer(month)
-    query |> where([t], fragment("CAST(strftime('%m', ?) AS INTEGER)", t.date) == ^month_int)
+    query |> where([t], fragment("EXTRACT(MONTH FROM ?) = ?", t.date, ^month_int))
   end
   defp filter_by_month(query, _), do: query
 
   defp filter_by_week(query, %{"week" => week}) when week != "" do
     week_int = String.to_integer(week)
-    query |> where([t], fragment("CAST(strftime('%W', ?) AS INTEGER) + 1", t.date) == ^week_int)
+    query |> where([t], fragment("EXTRACT(WEEK FROM ?) = ?", t.date, ^week_int))
   end
   defp filter_by_week(query, _), do: query
 
