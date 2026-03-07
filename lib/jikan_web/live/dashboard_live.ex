@@ -6,20 +6,20 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    
+
     socket = assign(socket, :timer_ref, nil)
-    
+
     if connected?(socket) do
       # Check for any running timer
       case Tracking.get_running_timer(user) do
         nil ->
           {:ok, assign_dashboard_data(socket, user, nil, 0)}
-        
+
         entry ->
           # Set up timer tick for running timer
           {:ok, timer_ref} = :timer.send_interval(1000, self(), :tick)
           elapsed = calculate_elapsed(entry)
-          {:ok, 
+          {:ok,
            socket
            |> assign(:timer_ref, timer_ref)
            |> assign_dashboard_data(user, entry, elapsed)}
@@ -34,11 +34,11 @@ defmodule JikanWeb.DashboardLive do
     weekly_summary = Tracking.weekly_summary(user)
     monthly_summary = Tracking.monthly_summary(user)
     projects = Tracking.list_projects(user, archived: false)
-    recent_entries = 
+    recent_entries =
       user
       |> Tracking.list_time_entries(%{})
       |> Enum.take(5)
-    
+
     socket
     |> assign(:running_timer, running_timer)
     |> assign(:elapsed, elapsed)
@@ -55,15 +55,15 @@ defmodule JikanWeb.DashboardLive do
     case socket.assigns.running_timer do
       nil ->
         {:noreply, socket}
-      
+
       _entry ->
         # Refetch the entry to ensure we have fresh data
         user = socket.assigns.current_user
         fresh_entry = Tracking.get_running_timer(user)
-        
+
         if fresh_entry do
           elapsed = calculate_elapsed(fresh_entry)
-          {:noreply, 
+          {:noreply,
            socket
            |> assign(:running_timer, fresh_entry)
            |> assign(:elapsed, elapsed)}
@@ -77,37 +77,37 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def handle_event("start_timer", params, socket) do
     IO.inspect(params, label: "START_TIMER_PARAMS")
-    
+
     user = socket.assigns.current_user
     project_id = params["project_id"]
     description = params["description"] || ""
-    
+
     IO.inspect({:starting_timer, project_id, description}, label: "START_TIMER")
-    
+
     case Tracking.start_timer(user, project_id, description) do
       {:ok, entry} ->
         IO.inspect(entry, label: "TIMER_CREATED")
-        
+
         # Cancel any existing timer
         if socket.assigns[:timer_ref] do
           :timer.cancel(socket.assigns.timer_ref)
         end
-        
+
         # Fetch the entry with all preloaded associations
         entry_with_preloads = Tracking.get_running_timer(user)
         IO.inspect(entry_with_preloads, label: "FETCHED_ENTRY_WITH_PRELOADS")
-        
+
         # Start the timer tick
         {:ok, timer_ref} = :timer.send_interval(1000, self(), :tick)
         IO.inspect(timer_ref, label: "TIMER_REF")
-        
+
         {:noreply,
          socket
          |> assign(:timer_ref, timer_ref)
          |> assign(:running_timer, entry_with_preloads)
          |> assign(:elapsed, 0)
          |> put_flash(:info, "Timer started")}
-      
+
       {:error, changeset} ->
         IO.inspect(changeset, label: "START_TIMER_CHANGESET")
         IO.inspect(changeset.errors, label: "START_TIMER_ERROR")
@@ -118,21 +118,21 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def handle_event("stop_timer", _params, socket) do
     user = socket.assigns.current_user
-    
+
     case Tracking.stop_timer(user) do
       {:ok, _entry} ->
         # Cancel the timer interval
         if socket.assigns[:timer_ref] do
           :timer.cancel(socket.assigns.timer_ref)
         end
-        
+
         # Refresh dashboard data
         today_summary = Tracking.daily_summary(user)
-        recent_entries = 
+        recent_entries =
           user
           |> Tracking.list_time_entries(%{})
           |> Enum.take(5)
-        
+
         {:noreply,
          socket
          |> assign(:timer_ref, nil)
@@ -141,10 +141,10 @@ defmodule JikanWeb.DashboardLive do
          |> assign(:today_summary, today_summary)
          |> assign(:recent_entries, recent_entries)
          |> put_flash(:info, "Timer stopped")}
-      
+
       {:error, :no_timer_running} ->
         {:noreply, put_flash(socket, :error, "No timer is running")}
-      
+
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to stop timer")}
     end
@@ -153,22 +153,22 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def handle_event("pause_timer", _params, socket) do
     user = socket.assigns.current_user
-    
+
     case Tracking.pause_timer(user) do
       {:ok, _entry} ->
         # Fetch the updated entry with all preloaded associations
         entry = Tracking.get_running_timer(user)
         elapsed = calculate_elapsed(entry)
-        
+
         {:noreply,
          socket
          |> assign(:running_timer, entry)
          |> assign(:elapsed, elapsed)
          |> put_flash(:info, "Timer paused")}
-      
+
       {:error, :no_timer_running} ->
         {:noreply, put_flash(socket, :error, "No timer is running")}
-      
+
       {:error, :timer_already_paused} ->
         {:noreply, put_flash(socket, :error, "Timer is already paused")}
     end
@@ -177,25 +177,25 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def handle_event("resume_timer", _params, socket) do
     user = socket.assigns.current_user
-    
+
     case Tracking.resume_timer(user) do
       {:ok, _entry} ->
         # Fetch the updated entry with all preloaded associations
         entry = Tracking.get_running_timer(user)
         elapsed = calculate_elapsed(entry)
-        
+
         {:noreply,
          socket
          |> assign(:running_timer, entry)
          |> assign(:elapsed, elapsed)
          |> put_flash(:info, "Timer resumed")}
-      
+
       {:error, :no_timer_running} ->
         {:noreply, put_flash(socket, :error, "No timer is running")}
-      
+
       {:error, :timer_not_paused} ->
         {:noreply, put_flash(socket, :error, "Timer is not paused")}
-      
+
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to resume timer")}
     end
@@ -204,23 +204,23 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def handle_event("quick_add", %{"time_entry" => time_entry_params}, socket) do
     user = socket.assigns.current_user
-    
+
     case Tracking.create_time_entry(user, time_entry_params) do
       {:ok, _entry} ->
         # Refresh dashboard data
         today_summary = Tracking.daily_summary(user)
-        recent_entries = 
+        recent_entries =
           user
           |> Tracking.list_time_entries(%{})
           |> Enum.take(5)
-        
+
         {:noreply,
          socket
          |> assign(:today_summary, today_summary)
          |> assign(:recent_entries, recent_entries)
          |> assign(:quick_entry_form, to_form(Tracking.change_time_entry(%Tracking.TimeEntry{}, %{})))
          |> put_flash(:info, "Time entry added")}
-      
+
       {:error, changeset} ->
         {:noreply, assign(socket, :quick_entry_form, to_form(changeset))}
     end
@@ -230,22 +230,22 @@ defmodule JikanWeb.DashboardLive do
   def handle_event("delete_entry", %{"id" => id}, socket) do
     user = socket.assigns.current_user
     entry = Tracking.get_time_entry!(user, id)
-    
+
     case Tracking.delete_time_entry(entry) do
       {:ok, _} ->
         # Refresh dashboard data
         today_summary = Tracking.daily_summary(user)
-        recent_entries = 
+        recent_entries =
           user
           |> Tracking.list_time_entries(%{})
           |> Enum.take(5)
-        
+
         {:noreply,
          socket
          |> assign(:today_summary, today_summary)
          |> assign(:recent_entries, recent_entries)
          |> put_flash(:info, "Time entry deleted")}
-      
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete entry")}
     end
@@ -254,17 +254,17 @@ defmodule JikanWeb.DashboardLive do
   defp calculate_elapsed(entry) do
     current_time = Time.utc_now()
     total_elapsed = Time.diff(current_time, entry.start_time, :second)
-    
+
     # Calculate current pause duration if timer is paused
     current_pause_duration = if entry.paused_at do
       Time.diff(current_time, entry.paused_at, :second)
     else
       0
     end
-    
+
     # Total paused time = previously accumulated paused time + current pause duration
     total_paused = ((entry.pause_duration_minutes || 0) * 60) + current_pause_duration
-    
+
     # Actual elapsed time = total time - paused time
     max(0, total_elapsed - total_paused)
   end
@@ -274,7 +274,7 @@ defmodule JikanWeb.DashboardLive do
     hours = div(seconds, 3600)
     minutes = div(rem(seconds, 3600), 60)
     seconds = rem(seconds, 60)
-    
+
     :io_lib.format("~2..0B:~2..0B:~2..0B", [hours, minutes, seconds])
     |> to_string()
   end
@@ -301,7 +301,7 @@ defmodule JikanWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-1">
+    <div class="p-2">
       <div class="hero bg-base-200 rounded-box mb-6">
         <div class="hero-content text-center">
           <div class="max-w-md">
@@ -313,7 +313,7 @@ defmodule JikanWeb.DashboardLive do
           </div>
         </div>
       </div>
-      
+
       <!-- Running Timer Widget -->
       <div :if={@running_timer} class="card bg-base-100 shadow-lg mb-6">
         <figure class={"px-10 pt-10 pb-4 #{if @running_timer.paused_at, do: "bg-warning/20", else: "bg-info/20"}"}>
@@ -357,7 +357,7 @@ defmodule JikanWeb.DashboardLive do
           </div>
           <div class="card-actions justify-end mt-4">
             <%= if @running_timer.paused_at do %>
-              <button 
+              <button
                 phx-click="resume_timer"
                 class="btn btn-success btn-sm gap-1"
               >
@@ -365,7 +365,7 @@ defmodule JikanWeb.DashboardLive do
                 Resume
               </button>
             <% else %>
-              <button 
+              <button
                 phx-click="pause_timer"
                 class="btn btn-warning btn-sm gap-1"
               >
@@ -373,7 +373,7 @@ defmodule JikanWeb.DashboardLive do
                 Pause
               </button>
             <% end %>
-            <button 
+            <button
               phx-click="stop_timer"
               class="btn btn-error btn-sm gap-1"
             >
@@ -410,10 +410,10 @@ defmodule JikanWeb.DashboardLive do
                 <label class="label">
                   <span class="label-text font-medium">Description <span class="text-xs text-base-content/70">(optional)</span></span>
                 </label>
-                <input 
-                  type="text" 
-                  name="description" 
-                  placeholder="What are you working on?" 
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="What are you working on?"
                   class="input input-bordered w-full text-sm sm:text-base"
                 />
               </div>
@@ -442,7 +442,7 @@ defmodule JikanWeb.DashboardLive do
             <div class="stat-desc">Time tracked today</div>
           </div>
         </div>
-        
+
         <div class="stats shadow bg-base-100">
           <div class="stat">
             <div class="stat-figure text-secondary">
@@ -455,7 +455,7 @@ defmodule JikanWeb.DashboardLive do
             <div class="stat-desc">Entries logged today</div>
           </div>
         </div>
-        
+
         <div class="stats shadow bg-base-100">
           <div class="stat">
             <div class="stat-figure text-accent">
@@ -468,7 +468,7 @@ defmodule JikanWeb.DashboardLive do
             <div class="stat-desc">Hours this week</div>
           </div>
         </div>
-        
+
         <div class="stats shadow bg-base-100">
           <div class="stat">
             <div class="stat-figure text-info">
@@ -509,9 +509,9 @@ defmodule JikanWeb.DashboardLive do
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <progress 
-                    class="progress progress-primary w-24" 
-                    value={day_data.total_minutes} 
+                  <progress
+                    class="progress progress-primary w-24"
+                    value={day_data.total_minutes}
                     max="480"
                   ></progress>
                 </div>
@@ -537,11 +537,11 @@ defmodule JikanWeb.DashboardLive do
                 <label class="label">
                   <span class="label-text">Date</span>
                 </label>
-                <input 
-                  type="date" 
-                  name="time_entry[date]" 
-                  value={Date.utc_today()} 
-                  required 
+                <input
+                  type="date"
+                  name="time_entry[date]"
+                  value={Date.utc_today()}
+                  required
                   class="input input-bordered w-full"
                 />
               </div>
@@ -562,11 +562,11 @@ defmodule JikanWeb.DashboardLive do
                 <label class="label">
                   <span class="label-text">Duration (minutes)</span>
                 </label>
-                <input 
-                  type="number" 
-                  name="time_entry[duration_minutes]" 
+                <input
+                  type="number"
+                  name="time_entry[duration_minutes]"
                   min="1"
-                  required 
+                  required
                   placeholder="90"
                   class="input input-bordered w-full"
                 />
@@ -575,9 +575,9 @@ defmodule JikanWeb.DashboardLive do
                 <label class="label">
                   <span class="label-text">Description</span>
                 </label>
-                <input 
-                  type="text" 
-                  name="time_entry[description]" 
+                <input
+                  type="text"
+                  name="time_entry[description]"
                   placeholder="What did you work on?"
                   class="input input-bordered w-full"
                 />
@@ -586,10 +586,10 @@ defmodule JikanWeb.DashboardLive do
             <div class="flex items-center justify-between mt-6">
               <div class="form-control">
                 <label class="label cursor-pointer gap-2">
-                  <input 
-                    type="checkbox" 
-                    name="time_entry[billable]" 
-                    checked 
+                  <input
+                    type="checkbox"
+                    name="time_entry[billable]"
+                    checked
                     class="checkbox checkbox-primary"
                   />
                   <span class="label-text">Billable</span>
@@ -617,14 +617,14 @@ defmodule JikanWeb.DashboardLive do
               <.icon name="hero-arrow-right" class="size-4" />
             </.link>
           </div>
-          
+
           <% entries_empty = length(@recent_entries) == 0 %>
           <div :if={entries_empty} class="text-center py-12">
             <.icon name="hero-clock" class="size-16 mx-auto text-base-300 mb-4" />
             <p class="text-base-content/70 text-lg mb-2">No time entries yet</p>
             <p class="text-base-content/50">Start tracking your time to see recent entries here!</p>
           </div>
-          
+
           <div :if={!entries_empty} class="space-y-3">
             <%= for entry <- @recent_entries do %>
               <div class="card bg-base-200 hover:bg-base-300 transition-colors">
@@ -681,7 +681,7 @@ defmodule JikanWeb.DashboardLive do
                           </.link>
                         </li>
                         <li>
-                          <button 
+                          <button
                             phx-click="delete_entry"
                             phx-value-id={entry.id}
                             data-confirm="Are you sure?"
