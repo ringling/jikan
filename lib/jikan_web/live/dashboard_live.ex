@@ -292,18 +292,6 @@ defmodule JikanWeb.DashboardLive do
     "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
   end
 
-  defp format_time(nil), do: "-"
-  defp format_time(time) do
-    case time do
-      %Time{} = t ->
-        hour = t.hour
-        minute = t.minute
-        "#{String.pad_leading(to_string(hour), 2, "0")}:#{String.pad_leading(to_string(minute), 2, "0")}"
-      _ ->
-        "-"
-    end
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -540,22 +528,10 @@ defmodule JikanWeb.DashboardLive do
           </h2>
           <div class="space-y-4 mt-4">
             <%= for day_data <- @weekly_summary.daily_data do %>
-              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center py-2">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center py-2">
                 <span class="text-sm font-medium">
                   <%= Calendar.strftime(day_data.date, "%d.%m.%y") %>
                 </span>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs text-base-content/70">Start:</span>
-                  <span class="text-sm font-mono badge badge-outline badge-sm">
-                    <%= format_time(day_data.earliest_start_time) %>
-                  </span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs text-base-content/70">End:</span>
-                  <span class="text-sm font-mono badge badge-outline badge-sm">
-                    <%= format_time(day_data.latest_end_time) %>
-                  </span>
-                </div>
                 <div class="flex items-center gap-2">
                   <progress
                     class="progress progress-primary w-24"

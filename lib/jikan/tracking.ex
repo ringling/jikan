@@ -448,9 +448,7 @@ defmodule Jikan.Tracking do
       date: t.date,
       total_minutes: sum(t.duration_minutes),
       total_hours: fragment("CAST(SUM(?) / 60.0 AS DECIMAL(10, 2))", t.duration_minutes),
-      entry_count: count(t.id),
-      earliest_start_time: min(t.start_time),
-      latest_end_time: max(t.end_time)
+      entry_count: count(t.id)
     })
     |> order_by(asc: :date)
     |> Repo.all()
