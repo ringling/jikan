@@ -42,3 +42,6 @@ npm-debug.log
 # Production environment files
 .env.prod
 
+.DS_Store
+
+data_backup/
