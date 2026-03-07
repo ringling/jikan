@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      PHX_HOST: ${PHX_HOST:-jikan.ringling.info}
+      PHX_SERVER: true
+      POOL_SIZE: 10
+    ports:
+      - "4000:4000"
+    volumes:
+      - app_data:/app/data
+
+volumes:
+  app_data:
