@@ -2,6 +2,16 @@
 
 To start your Phoenix server:
 
+
+```bash
+# on local run
+ssh root@157.180.64.13 "docker run --rm -v jikan_data:/data -v \$(pwd):/backup alpine tar czf /backup/jikan_backup.tar.gz -C /data ."
+# Then copy the tar file
+scp root@157.180.64.13:/root/jikan_backup.tar.gz ./data_backup/
+```
+
+scp "root@157.180.64.13:/var/lib/docker/volumes/jikan_data/_data/*.*" ./data_backup/
+
 * Run `mix setup` to install and setup dependencies
 * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 

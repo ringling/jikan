@@ -74,6 +74,18 @@ defmodule JikanWeb.ClientLive.Show do
                 </div>
                 
                 <div>
+                  <div class="text-sm opacity-70 mb-2">Default Hourly Rate</div>
+                  <%= if @client.default_hourly_rate do %>
+                    <div class="flex items-center gap-2">
+                      <.icon name="hero-currency-dollar" class="size-4" />
+                      <span class="text-lg font-semibold">DKK {@client.default_hourly_rate}</span>
+                    </div>
+                  <% else %>
+                    <div class="text-base opacity-60 italic">No rate set</div>
+                  <% end %>
+                </div>
+                
+                <div>
                   <div class="text-sm opacity-70 mb-2">Status</div>
                   <%= if @client.active do %>
                     <div class="badge badge-success gap-1">

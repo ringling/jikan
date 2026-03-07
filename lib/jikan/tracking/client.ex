@@ -6,6 +6,7 @@ defmodule Jikan.Tracking.Client do
     field :name, :string
     field :contact_email, :string
     field :active, :boolean, default: true
+    field :default_hourly_rate, :decimal
     
     belongs_to :user, Jikan.Accounts.User
     has_many :projects, Jikan.Tracking.Project
@@ -16,8 +17,9 @@ defmodule Jikan.Tracking.Client do
   @doc false
   def changeset(client, attrs) do
     client
-    |> cast(attrs, [:name, :contact_email, :active, :user_id])
+    |> cast(attrs, [:name, :contact_email, :active, :default_hourly_rate, :user_id])
     |> validate_required([:name, :active, :user_id])
+    |> validate_number(:default_hourly_rate, greater_than_or_equal_to: 0)
     |> unique_constraint(:name, name: :clients_name_user_id_index)
     |> foreign_key_constraint(:user_id)
   end

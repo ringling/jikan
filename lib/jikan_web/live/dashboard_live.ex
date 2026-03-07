@@ -33,6 +33,9 @@ defmodule JikanWeb.DashboardLive do
     today_summary = Tracking.daily_summary(user)
     weekly_summary = Tracking.weekly_summary(user)
     monthly_summary = Tracking.monthly_summary(user)
+    daily_revenue = Tracking.daily_revenue(user)
+    weekly_revenue = Tracking.weekly_revenue(user)
+    monthly_revenue = Tracking.monthly_revenue(user)
     projects = Tracking.list_projects(user, archived: false)
     recent_entries =
       user
@@ -45,6 +48,9 @@ defmodule JikanWeb.DashboardLive do
     |> assign(:today_summary, today_summary)
     |> assign(:weekly_summary, weekly_summary)
     |> assign(:monthly_summary, monthly_summary)
+    |> assign(:daily_revenue, daily_revenue)
+    |> assign(:weekly_revenue, weekly_revenue)
+    |> assign(:monthly_revenue, monthly_revenue)
     |> assign(:projects, projects)
     |> assign(:recent_entries, recent_entries)
     |> assign(:quick_entry_form, to_form(Tracking.change_time_entry(%Tracking.TimeEntry{}, %{})))
@@ -479,6 +485,48 @@ defmodule JikanWeb.DashboardLive do
               <%= format_minutes(@monthly_summary.total_minutes) %>
             </div>
             <div class="stat-desc">Hours this month</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-success">
+              <.icon name="hero-currency-dollar" class="size-8" />
+            </div>
+            <div class="stat-title">Today's Revenue</div>
+            <div class="stat-value text-success">
+              DKK <%= @daily_revenue.total_revenue %>
+            </div>
+            <div class="stat-desc"><%= @daily_revenue.billable_entries %> billable entries</div>
+          </div>
+        </div>
+
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-success">
+              <.icon name="hero-banknotes" class="size-8" />
+            </div>
+            <div class="stat-title">Week Revenue</div>
+            <div class="stat-value text-success">
+              DKK <%= @weekly_revenue.total_revenue %>
+            </div>
+            <div class="stat-desc"><%= @weekly_revenue.billable_entries %> billable entries</div>
+          </div>
+        </div>
+
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-success">
+              <.icon name="hero-chart-bar-square" class="size-8" />
+            </div>
+            <div class="stat-title">Month Revenue</div>
+            <div class="stat-value text-success">
+              DKK <%= @monthly_revenue.total_revenue %>
+            </div>
+            <div class="stat-desc"><%= @monthly_revenue.billable_entries %> billable entries</div>
           </div>
         </div>
       </div>

@@ -72,6 +72,20 @@ defmodule JikanWeb.ProjectLive.Form do
                   </label>
                 </div>
                 
+                <div class="form-control w-full">
+                  <.input 
+                    field={@form[:hourly_rate]} 
+                    type="number" 
+                    label="Hourly Rate (DKK)" 
+                    placeholder="850.00"
+                    step="0.01"
+                    min="0"
+                  />
+                  <label class="label">
+                    <span class="label-text-alt">Leave blank to use client's default rate. Overrides client rate for this project.</span>
+                  </label>
+                </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="form-control w-full">
                     <.input 

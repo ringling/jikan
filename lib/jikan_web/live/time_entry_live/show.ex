@@ -115,6 +115,20 @@ defmodule JikanWeb.TimeEntryLive.Show do
                   <% end %>
                 </div>
                 
+                <%= if @time_entry.billable && (@time_entry.total_amount || @time_entry.hourly_rate) do %>
+                  <div>
+                    <div class="text-sm opacity-70 mb-2">Billing Amount</div>
+                    <%= if @time_entry.total_amount do %>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xl font-bold">DKK {@time_entry.total_amount}</span>
+                      </div>
+                    <% end %>
+                    <%= if @time_entry.hourly_rate do %>
+                      <div class="text-sm opacity-60 mt-1">@ DKK {@time_entry.hourly_rate}/hr</div>
+                    <% end %>
+                  </div>
+                <% end %>
+                
                 <%= if @time_entry.pause_duration_minutes && @time_entry.pause_duration_minutes > 0 do %>
                   <div>
                     <div class="text-sm opacity-70 mb-2">Pause Duration</div>

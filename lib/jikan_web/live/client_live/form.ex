@@ -59,6 +59,20 @@ defmodule JikanWeb.ClientLive.Form do
                   </label>
                 </div>
                 
+                <div class="form-control w-full">
+                  <.input 
+                    field={@form[:default_hourly_rate]} 
+                    type="number" 
+                    label="Default Hourly Rate (DKK)" 
+                    placeholder="750.00"
+                    step="0.01"
+                    min="0"
+                  />
+                  <label class="label">
+                    <span class="label-text-alt">Default rate for all projects under this client (can be overridden per project)</span>
+                  </label>
+                </div>
+                
                 <div class="form-control">
                   <.input 
                     field={@form[:active]} 

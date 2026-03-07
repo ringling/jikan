@@ -221,6 +221,9 @@ defmodule Jikan.Tracking do
   def create_time_entry(user, attrs) do
     attrs = Map.put(attrs, "user_id", user.id)
     
+    # Determine hourly rate if not explicitly provided
+    attrs = maybe_set_hourly_rate(attrs)
+    
     %TimeEntry{}
     |> TimeEntry.changeset(attrs)
     |> Repo.insert()
@@ -230,9 +233,47 @@ defmodule Jikan.Tracking do
   Updates a time entry.
   """
   def update_time_entry(%TimeEntry{} = time_entry, attrs) do
+    # Determine hourly rate if project changes and rate not explicitly provided
+    attrs = maybe_set_hourly_rate(attrs, time_entry)
+    
     time_entry
     |> TimeEntry.changeset(attrs)
     |> Repo.update()
+  end
+
+  defp maybe_set_hourly_rate(attrs, existing_entry \\ nil) do
+    # If hourly_rate is explicitly provided, use it
+    if Map.has_key?(attrs, "hourly_rate") || Map.has_key?(attrs, :hourly_rate) do
+      attrs
+    else
+      # Get project_id from attrs or existing entry
+      project_id = 
+        Map.get(attrs, "project_id") || 
+        Map.get(attrs, :project_id) || 
+        (existing_entry && existing_entry.project_id)
+      
+      if project_id do
+        # Fetch project with client preloaded
+        project = Repo.get(Project, project_id) |> Repo.preload(:client)
+        
+        if project do
+          # Determine rate: project rate → client default rate → nil
+          hourly_rate = 
+            project.hourly_rate || 
+            (project.client && project.client.default_hourly_rate)
+          
+          if hourly_rate do
+            Map.put(attrs, "hourly_rate", hourly_rate)
+          else
+            attrs
+          end
+        else
+          attrs
+        end
+      else
+        attrs
+      end
+    end
   end
 
   @doc """
@@ -266,6 +307,9 @@ defmodule Jikan.Tracking do
       "paused_at" => nil,
       "billable" => true
     }
+    
+    # Determine hourly rate based on project/client settings
+    attrs = maybe_set_hourly_rate(attrs)
     
     %TimeEntry{}
     |> TimeEntry.changeset(attrs)
@@ -475,6 +519,55 @@ defmodule Jikan.Tracking do
   end
 
   @doc """
+  Calculates revenue for a given period.
+  """
+  def calculate_revenue(user, start_date, end_date) do
+    entries = TimeEntry
+    |> where(user_id: ^user.id)
+    |> where([t], t.date >= ^start_date and t.date <= ^end_date)
+    |> where([t], t.billable == true)
+    |> where([t], not is_nil(t.total_amount))
+    |> Repo.all()
+    
+    total_revenue = 
+      entries
+      |> Enum.reduce(Decimal.new(0), fn e, acc -> 
+        if e.total_amount, do: Decimal.add(acc, e.total_amount), else: acc
+      end)
+    
+    %{
+      start_date: start_date,
+      end_date: end_date,
+      total_revenue: total_revenue,
+      billable_entries: length(entries)
+    }
+  end
+
+  @doc """
+  Returns daily revenue for a user.
+  """
+  def daily_revenue(user, date \\ Date.utc_today()) do
+    calculate_revenue(user, date, date)
+  end
+
+  @doc """
+  Returns weekly revenue for a user.
+  """
+  def weekly_revenue(user, week_start \\ Date.beginning_of_week(Date.utc_today(), :monday)) do
+    week_end = Date.add(week_start, 6)
+    calculate_revenue(user, week_start, week_end)
+  end
+
+  @doc """
+  Returns monthly revenue for a user.
+  """
+  def monthly_revenue(user, date \\ Date.utc_today()) do
+    month_start = Date.beginning_of_month(date)
+    month_end = Date.end_of_month(date)
+    calculate_revenue(user, month_start, month_end)
+  end
+
+  @doc """
   Returns billable vs non-billable breakdown for a user in a date range.
   """
   def billable_breakdown(user, from_date, to_date) do
@@ -499,7 +592,7 @@ defmodule Jikan.Tracking do
   def export_time_entries_to_csv(user, filters \\ %{}) do
     time_entries = list_time_entries(user, filters)
     
-    csv_header = "Date,Company,Project,Description,Start Time,End Time,Duration,Pause Duration,Billable,Week,Month\n"
+    csv_header = "Date,Company,Project,Description,Start Time,End Time,Duration,Pause Duration,Billable,Hourly Rate (DKK),Total Amount (DKK),Week,Month\n"
     
     csv_rows = 
       time_entries
@@ -521,6 +614,8 @@ defmodule Jikan.Tracking do
       format_duration_for_csv(time_entry.duration_minutes),
       format_duration_for_csv(time_entry.pause_duration_minutes || 0),
       if(time_entry.billable, do: "Yes", else: "No"),
+      format_rate_for_csv(time_entry.hourly_rate),
+      format_amount_for_csv(time_entry.total_amount, time_entry.billable),
       "W#{format_week_for_csv(time_entry.date)}",
       format_month_for_csv(time_entry.date)
     ]
@@ -560,6 +655,13 @@ defmodule Jikan.Tracking do
       12 -> "Dec"
     end
   end
+
+  defp format_rate_for_csv(nil), do: ""
+  defp format_rate_for_csv(rate), do: to_string(rate)
+
+  defp format_amount_for_csv(nil, _billable), do: ""
+  defp format_amount_for_csv(_amount, false), do: "0.00"
+  defp format_amount_for_csv(amount, true), do: to_string(amount)
 
   defp csv_row_to_string(row) do
     row

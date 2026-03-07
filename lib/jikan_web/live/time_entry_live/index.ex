@@ -211,6 +211,18 @@ defmodule JikanWeb.TimeEntryLive.Index do
                     </div>
                   <% end %>
                 </:col>
+                <:col :let={{_id, time_entry}} label="Amount" class="hidden lg:table-cell">
+                  <%= if time_entry.total_amount && time_entry.billable do %>
+                    <div class="flex flex-col items-start">
+                      <span class="font-semibold">DKK {time_entry.total_amount}</span>
+                      <%= if time_entry.hourly_rate do %>
+                        <span class="text-xs opacity-60">@{time_entry.hourly_rate}/hr</span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <span class="text-base opacity-60">-</span>
+                  <% end %>
+                </:col>
                 <:action :let={{_id, time_entry}}>
                   <div class="dropdown dropdown-end">
                     <div tabindex="0" role="button" class="btn btn-ghost btn-sm">

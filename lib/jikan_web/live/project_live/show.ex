@@ -87,6 +87,27 @@ defmodule JikanWeb.ProjectLive.Show do
                 </div>
                 
                 <div>
+                  <div class="text-sm opacity-70 mb-2">Hourly Rate</div>
+                  <%= if @project.hourly_rate do %>
+                    <div class="flex items-center gap-2">
+                      <.icon name="hero-currency-dollar" class="size-4" />
+                      <span class="text-lg font-semibold">DKK {@project.hourly_rate}</span>
+                      <span class="text-sm opacity-60">(project rate)</span>
+                    </div>
+                  <% else %>
+                    <%= if @project.client.default_hourly_rate do %>
+                      <div class="flex items-center gap-2">
+                        <.icon name="hero-currency-dollar" class="size-4" />
+                        <span class="text-lg font-semibold">DKK {@project.client.default_hourly_rate}</span>
+                        <span class="text-sm opacity-60">(from client)</span>
+                      </div>
+                    <% else %>
+                      <div class="text-base opacity-60 italic">No rate set</div>
+                    <% end %>
+                  <% end %>
+                </div>
+                
+                <div>
                   <div class="text-sm opacity-70 mb-2">Project Color</div>
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded border-2 border-base-300" style={"background-color: #{@project.color || "#666"}"}></div>
