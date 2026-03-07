@@ -141,28 +141,28 @@ for user <- users do
   ]
 
   today = Date.utc_today()
-  
+
   for days_ago <- 0..13 do
     date = Date.add(today, -days_ago)
-    
+
     # Skip weekends for more realistic data
     if Date.day_of_week(date) not in [6, 7] do
       # Create 2-5 entries per day
       num_entries = :rand.uniform(4) + 1
-      
+
       for _ <- 1..num_entries do
         project = Enum.random(projects)
         description = Enum.random(descriptions)
-        
+
         # Random duration between 30 and 180 minutes
         duration = (:rand.uniform(6) + 1) * 30
-        
+
         # Random start time between 8am and 5pm
         hour = :rand.uniform(9) + 7
         minute = :rand.uniform(4) * 15
         start_time = ~T[08:00:00] |> Time.add(hour * 3600 + minute * 60, :second)
         end_time = Time.add(start_time, duration * 60, :second)
-        
+
         Repo.insert!(%TimeEntry{
           description: description,
           date: date,
@@ -176,7 +176,7 @@ for user <- users do
       end
     end
   end
-  
+
   IO.puts "Created sample data for #{user.email}"
 end
 

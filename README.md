@@ -6,7 +6,7 @@ To start your Phoenix server:
 ```bash
 # on local run
 ssh root@157.180.64.13 "docker run --rm -v jikan_data:/data -v \$(pwd):/backup alpine tar czf /backup/jikan_backup.tar.gz -C /data ."
-# Then copy the tar file
+1# Then copy the tar file
 scp root@157.180.64.13:/root/jikan_backup.tar.gz ./data_backup/
 ```
 
