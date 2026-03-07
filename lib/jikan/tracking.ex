@@ -451,6 +451,30 @@ defmodule Jikan.Tracking do
   end
 
   @doc """
+  Returns monthly summary for a user.
+  """
+  def monthly_summary(user, date \\ Date.utc_today()) do
+    month_start_date = Date.beginning_of_month(date)
+    month_end_date = Date.end_of_month(date)
+    
+    entries = TimeEntry
+    |> where(user_id: ^user.id)
+    |> where([t], t.date >= ^month_start_date and t.date <= ^month_end_date)
+    |> Repo.all()
+    
+    total_minutes = Enum.reduce(entries, 0, fn e, acc -> acc + (e.duration_minutes || 0) end)
+    entry_count = length(entries)
+    
+    %{
+      month_start: month_start_date,
+      month_end: month_end_date,
+      total_minutes: total_minutes,
+      total_hours: Float.round(total_minutes / 60.0, 2),
+      entry_count: entry_count
+    }
+  end
+
+  @doc """
   Returns billable vs non-billable breakdown for a user in a date range.
   """
   def billable_breakdown(user, from_date, to_date) do

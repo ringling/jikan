@@ -32,6 +32,7 @@ defmodule JikanWeb.DashboardLive do
   defp assign_dashboard_data(socket, user, running_timer, elapsed) do
     today_summary = Tracking.daily_summary(user)
     weekly_summary = Tracking.weekly_summary(user)
+    monthly_summary = Tracking.monthly_summary(user)
     projects = Tracking.list_projects(user, archived: false)
     recent_entries = 
       user
@@ -43,6 +44,7 @@ defmodule JikanWeb.DashboardLive do
     |> assign(:elapsed, elapsed)
     |> assign(:today_summary, today_summary)
     |> assign(:weekly_summary, weekly_summary)
+    |> assign(:monthly_summary, monthly_summary)
     |> assign(:projects, projects)
     |> assign(:recent_entries, recent_entries)
     |> assign(:quick_entry_form, to_form(Tracking.change_time_entry(%Tracking.TimeEntry{}, %{})))
@@ -413,7 +415,7 @@ defmodule JikanWeb.DashboardLive do
       </div>
 
       <!-- Today's Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div class="stats shadow bg-base-100">
           <div class="stat">
             <div class="stat-figure text-primary">
@@ -450,6 +452,19 @@ defmodule JikanWeb.DashboardLive do
               <%= format_minutes(@weekly_summary.total_minutes) %>
             </div>
             <div class="stat-desc">Hours this week</div>
+          </div>
+        </div>
+        
+        <div class="stats shadow bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-info">
+              <.icon name="hero-calendar" class="size-8" />
+            </div>
+            <div class="stat-title">Month Total</div>
+            <div class="stat-value text-info">
+              <%= format_minutes(@monthly_summary.total_minutes) %>
+            </div>
+            <div class="stat-desc">Hours this month</div>
           </div>
         </div>
       </div>
