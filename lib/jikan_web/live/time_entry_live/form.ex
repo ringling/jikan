@@ -120,6 +120,96 @@ defmodule JikanWeb.TimeEntryLive.Form do
                   </div>
                 </div>
               </div>
+
+              <div class="divider"></div>
+
+              <!-- Billing Information Section -->
+              <div class="mb-8">
+                <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                  <.icon name="hero-currency-dollar" class="size-5" />
+                  Billing Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <!-- Current Hourly Rate -->
+                  <div>
+                    <.input 
+                      field={@form[:hourly_rate]} 
+                      type="number" 
+                      label="Hourly Rate (DKK)" 
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                    <label class="label">
+                      <span class="label-text-alt text-xs opacity-70">
+                        <%= cond do %>
+                          <% Phoenix.HTML.Form.input_value(@form, :hourly_rate) && Phoenix.HTML.Form.input_value(@form, :project_id) -> %>
+                            <%= case get_rate_source(@projects, Phoenix.HTML.Form.input_value(@form, :project_id)) do %>
+                              <% {:project, rate} -> %><span class="text-info">From project (DKK <%= rate %>)</span>
+                              <% {:client, rate} -> %><span class="text-warning">From client default (DKK <%= rate %>)</span>
+                              <% :none -> %><span class="text-base-content/50">No rate set for this project</span>
+                            <% end %>
+                          <% true -> %>
+                            <span class="text-base-content/50">Select project to see applicable rate</span>
+                        <% end %>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <!-- Total Amount -->
+                  <div>
+                    <div class="form-control w-full">
+                      <label class="label">
+                        <span class="label-text font-medium">Total Amount (DKK)</span>
+                      </label>
+                      <div class="input input-bordered flex items-center bg-base-200">
+                        <span class="font-mono text-lg">
+                          <%= if get_total_amount(@form) do %>
+                            DKK <%= get_total_amount(@form) %>
+                          <% else %>
+                            DKK 0.00
+                          <% end %>
+                        </span>
+                      </div>
+                      <label class="label">
+                        <span class="label-text-alt text-xs opacity-70">
+                          <%= if @form.data.billable do %>
+                            Calculated from billable time
+                          <% else %>
+                            Non-billable entry
+                          <% end %>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <!-- Update Rate Button -->
+                  <div>
+                    <div class="form-control w-full">
+                      <label class="label">
+                        <span class="label-text font-medium">Rate Management</span>
+                      </label>
+                      <button
+                        type="button"
+                        phx-click="update_rate"
+                        class={[
+                          "btn btn-outline btn-info gap-2 w-full",
+                          unless(Phoenix.HTML.Form.input_value(@form, :project_id), do: "btn-disabled")
+                        ]}
+                        disabled={!Phoenix.HTML.Form.input_value(@form, :project_id)}
+                      >
+                        <.icon name="hero-arrow-path" class="size-4" />
+                        Update Rate & Total
+                      </button>
+                      <label class="label">
+                        <span class="label-text-alt text-xs opacity-70">
+                          Apply current project/client rate
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
               <div class="card-actions justify-end">
                 <.button variant="ghost" navigate={return_path(@return_to, @time_entry)} class="gap-2">
@@ -153,7 +243,8 @@ defmodule JikanWeb.TimeEntryLive.Form do
   defp apply_action(socket, :edit, %{"id" => id}) do
     user = socket.assigns.current_user
     time_entry = Tracking.get_time_entry!(user, id)
-    projects = Tracking.list_projects(user)
+    # Load projects with client data preloaded for rate information
+    projects = Tracking.list_projects(user) |> Jikan.Repo.preload(:client)
 
     socket
     |> assign(:page_title, "Edit Time Entry")
@@ -166,8 +257,8 @@ defmodule JikanWeb.TimeEntryLive.Form do
     user = socket.assigns.current_user
     time_entry = %TimeEntry{}
     
-    # Load projects for the dropdown
-    projects = Tracking.list_projects(user)
+    # Load projects with client data preloaded for rate information
+    projects = Tracking.list_projects(user) |> Jikan.Repo.preload(:client)
 
     socket
     |> assign(:page_title, "New Time Entry")
@@ -184,6 +275,56 @@ defmodule JikanWeb.TimeEntryLive.Form do
 
   def handle_event("save", %{"time_entry" => time_entry_params}, socket) do
     save_time_entry(socket, socket.assigns.live_action, time_entry_params)
+  end
+
+  def handle_event("update_rate", _params, socket) do
+    project_id = Phoenix.HTML.Form.input_value(socket.assigns.form, :project_id)
+    
+    if project_id do
+      case determine_applicable_rate(socket.assigns.projects, project_id) do
+        {:ok, rate, source} ->
+          # Get current form data and merge with existing time entry data
+          current_params = socket.assigns.form.params || %{}
+          
+          # Get current form values for calculation
+          duration_minutes = Phoenix.HTML.Form.input_value(socket.assigns.form, :duration_minutes) || 
+                           socket.assigns.time_entry.duration_minutes || 0
+          pause_duration_minutes = Phoenix.HTML.Form.input_value(socket.assigns.form, :pause_duration_minutes) || 
+                                 socket.assigns.time_entry.pause_duration_minutes || 0
+          billable = Phoenix.HTML.Form.input_value(socket.assigns.form, :billable)
+          billable = if billable == nil, do: socket.assigns.time_entry.billable, else: billable
+          
+          # Update params with new rate and trigger recalculation
+          updated_params = current_params
+          |> Map.put("hourly_rate", rate)
+          |> Map.put("duration_minutes", duration_minutes)
+          |> Map.put("pause_duration_minutes", pause_duration_minutes) 
+          |> Map.put("billable", billable)
+          
+          # Create changeset to trigger total_amount calculation
+          changeset = Tracking.change_time_entry(socket.assigns.time_entry, updated_params)
+          
+          # Flash message based on rate source
+          message = case source do
+            :project -> "Rate updated from project setting (DKK #{rate})"
+            :client -> "Rate updated from client default (DKK #{rate})"
+          end
+          
+          {:noreply,
+           socket
+           |> assign(form: to_form(changeset, action: :validate))
+           |> put_flash(:info, message)}
+        
+        {:error, :no_rate} ->
+          {:noreply,
+           socket
+           |> put_flash(:warning, "No rate set for this project or its client")}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Please select a project first")}
+    end
   end
 
   defp save_time_entry(socket, :edit, time_entry_params) do
@@ -217,4 +358,55 @@ defmodule JikanWeb.TimeEntryLive.Form do
 
   defp return_path("index", _time_entry), do: ~p"/time-entries"
   defp return_path("show", time_entry), do: ~p"/time-entries/#{time_entry}"
+
+  defp get_rate_source(projects, project_id) when is_binary(project_id) do
+    get_rate_source(projects, String.to_integer(project_id))
+  rescue
+    ArgumentError -> :none
+  end
+
+  defp get_rate_source(projects, project_id) when is_integer(project_id) do
+    case Enum.find(projects, &(&1.id == project_id)) do
+      nil -> :none
+      project ->
+        cond do
+          project.hourly_rate -> {:project, project.hourly_rate}
+          project.client && project.client.default_hourly_rate -> {:client, project.client.default_hourly_rate}
+          true -> :none
+        end
+    end
+  end
+
+  defp get_rate_source(_projects, _), do: :none
+
+  defp determine_applicable_rate(projects, project_id) when is_binary(project_id) do
+    determine_applicable_rate(projects, String.to_integer(project_id))
+  rescue
+    ArgumentError -> {:error, :no_rate}
+  end
+
+  defp determine_applicable_rate(projects, project_id) when is_integer(project_id) do
+    case get_rate_source(projects, project_id) do
+      {:project, rate} -> {:ok, rate, :project}
+      {:client, rate} -> {:ok, rate, :client}
+      :none -> {:error, :no_rate}
+    end
+  end
+
+  defp get_total_amount(form) do
+    # Try to get total_amount from the changeset data first
+    case Phoenix.HTML.Form.input_value(form, :total_amount) do
+      nil -> 
+        # If not in form data, try to get it from the original data
+        case form.data do
+          %{total_amount: amount} when not is_nil(amount) -> 
+            # Format as string with 2 decimal places
+            :erlang.float_to_binary(Decimal.to_float(amount), [decimals: 2])
+          _ -> nil
+        end
+      amount when not is_nil(amount) ->
+        # Format as string with 2 decimal places
+        :erlang.float_to_binary(Decimal.to_float(amount), [decimals: 2])
+    end
+  end
 end
