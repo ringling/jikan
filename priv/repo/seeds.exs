@@ -184,11 +184,15 @@ for user <- users do
         end_time = Time.add(start_time, duration * 60, :second)
         
         # Determine hourly rate (project rate or client default)
+        acme_corp_id = acme_corp.id
+        tech_startup_id = tech_startup.id
+        consulting_co_id = consulting_co.id
+        
         hourly_rate = project.hourly_rate || 
                       (case project.client_id do
-                         ^acme_corp.id -> Decimal.new("850.00")
-                         ^tech_startup.id -> Decimal.new("900.00")
-                         ^consulting_co.id -> Decimal.new("1100.00")
+                         ^acme_corp_id -> Decimal.new("850.00")
+                         ^tech_startup_id -> Decimal.new("900.00")
+                         ^consulting_co_id -> Decimal.new("1100.00")
                          _ -> nil
                        end)
         
