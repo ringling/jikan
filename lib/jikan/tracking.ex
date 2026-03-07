@@ -154,6 +154,7 @@ defmodule Jikan.Tracking do
     |> filter_by_project(filters)
     |> filter_by_billable(filters)
     |> filter_by_client(filters)
+    |> filter_by_year(filters)
     |> filter_by_month(filters)
     |> filter_by_week(filters)
   end
@@ -186,11 +187,12 @@ defmodule Jikan.Tracking do
   end
   defp filter_by_client(query, _), do: query
 
-  defp filter_by_month(query, %{"month" => month, "year" => year}) when month != "" and year != "" do
-    month_int = String.to_integer(month)
+  defp filter_by_year(query, %{"year" => year}) when year != "" do
     year_int = String.to_integer(year)
-    query |> where([t], fragment("EXTRACT(MONTH FROM ?) = ?", t.date, ^month_int) and fragment("EXTRACT(YEAR FROM ?) = ?", t.date, ^year_int))
+    query |> where([t], fragment("EXTRACT(YEAR FROM ?) = ?", t.date, ^year_int))
   end
+  defp filter_by_year(query, _), do: query
+
   defp filter_by_month(query, %{"month" => month}) when month != "" do
     month_int = String.to_integer(month)
     query |> where([t], fragment("EXTRACT(MONTH FROM ?) = ?", t.date, ^month_int))
