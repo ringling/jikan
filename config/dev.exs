@@ -2,8 +2,12 @@ import Config
 
 # Configure your database
 config :jikan, Jikan.Repo,
-  database: Path.expand("../jikan_dev.db", __DIR__),
-  pool_size: 5,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "jikan_dev",
+  port: 5432,
+  pool_size: 10,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
 
