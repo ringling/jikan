@@ -315,75 +315,89 @@ defmodule JikanWeb.DashboardLive do
       </div>
       
       <!-- Running Timer Widget -->
-      <div :if={@running_timer} class={"card #{if @running_timer.paused_at, do: "bg-warning text-warning-content", else: "bg-info text-info-content"} mb-6 shadow-lg"}>
+      <div :if={@running_timer} class="card bg-base-100 shadow-lg mb-6">
+        <figure class={"px-10 pt-10 pb-4 #{if @running_timer.paused_at, do: "bg-warning/20", else: "bg-info/20"}"}>
+          <div class="text-center">
+            <%= if @running_timer.paused_at do %>
+              <.icon name="hero-pause-circle" class="size-20 text-warning mb-2" />
+            <% else %>
+              <.icon name="hero-play-circle" class="size-20 text-info mb-2 animate-pulse" />
+            <% end %>
+            <div class="text-5xl font-mono font-bold countdown text-base-content">
+              <%= format_duration(@elapsed) %>
+            </div>
+          </div>
+        </figure>
         <div class="card-body">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="card-title text-2xl flex items-center gap-3">
-                <%= if @running_timer.paused_at do %>
-                  <.icon name="hero-pause-circle" class="size-8" />
-                  Timer Paused
-                <% else %>
-                  <.icon name="hero-play-circle" class="size-8" />
-                  Timer Running
-                <% end %>
-              </h2>
-              <p class="text-lg opacity-90">
-                <%= @running_timer.project.name %> - <%= @running_timer.project.client.name %>
-              </p>
-              <p :if={@running_timer.description} class="opacity-80 mt-1">
-                <%= @running_timer.description %>
-              </p>
-            </div>
-            <div class="text-right">
-              <div class="text-5xl font-mono font-bold countdown">
-                <%= format_duration(@elapsed) %>
+          <h2 class="card-title">
+            <%= if @running_timer.paused_at do %>
+              Timer Paused
+              <div class="badge badge-warning">PAUSED</div>
+            <% else %>
+              Timer Running
+              <div class="badge badge-info">ACTIVE</div>
+            <% end %>
+          </h2>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="avatar avatar-placeholder">
+                <div class="text-white w-8 rounded-full" style={"background-color: #{@running_timer.project.color}"}>
+                  <span class="text-xs"><%= String.slice(@running_timer.project.name, 0..1) |> String.upcase %></span>
+                </div>
               </div>
-              <div class="card-actions justify-end mt-4">
-                <%= if @running_timer.paused_at do %>
-                  <button 
-                    phx-click="resume_timer"
-                    class="btn btn-success gap-2"
-                  >
-                    <.icon name="hero-play" class="size-5" />
-                    Resume
-                  </button>
-                <% else %>
-                  <button 
-                    phx-click="pause_timer"
-                    class="btn btn-warning gap-2"
-                  >
-                    <.icon name="hero-pause" class="size-5" />
-                    Pause
-                  </button>
-                <% end %>
-                <button 
-                  phx-click="stop_timer"
-                  class="btn btn-error gap-2"
-                >
-                  <.icon name="hero-stop-circle" class="size-5" />
-                  Stop
-                </button>
+              <div>
+                <div class="font-semibold"><%= @running_timer.project.name %></div>
+                <div class="text-sm opacity-70"><%= @running_timer.project.client.name %></div>
               </div>
             </div>
+            <p :if={@running_timer.description} class="text-sm">
+              <.icon name="hero-document-text" class="size-4 inline mr-1" />
+              <%= @running_timer.description %>
+            </p>
+          </div>
+          <div class="card-actions justify-end mt-4">
+            <%= if @running_timer.paused_at do %>
+              <button 
+                phx-click="resume_timer"
+                class="btn btn-success btn-sm gap-1"
+              >
+                <.icon name="hero-play" class="size-4" />
+                Resume
+              </button>
+            <% else %>
+              <button 
+                phx-click="pause_timer"
+                class="btn btn-warning btn-sm gap-1"
+              >
+                <.icon name="hero-pause" class="size-4" />
+                Pause
+              </button>
+            <% end %>
+            <button 
+              phx-click="stop_timer"
+              class="btn btn-error btn-sm gap-1"
+            >
+              <.icon name="hero-stop" class="size-4" />
+              Stop
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Start Timer Form (when no timer running) -->
       <div :if={!@running_timer && length(@projects) > 0} class="card bg-base-100 shadow-lg mb-6">
-        <div class="card-body">
-          <h2 class="card-title text-xl flex items-center gap-2">
-            <.icon name="hero-play" class="size-6" />
+        <div class="card-body p-4 sm:p-6">
+          <h2 class="card-title text-lg sm:text-xl flex items-center gap-2 mb-4">
+            <.icon name="hero-play" class="size-5 sm:size-6" />
             Start Timer
           </h2>
-          <form phx-submit="start_timer" class="form-control w-full">
-            <div class="flex flex-col lg:flex-row gap-4">
-              <div class="form-control w-full lg:w-1/2">
+          <form phx-submit="start_timer" class="space-y-4">
+            <div class="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 sm:gap-4">
+              <div class="form-control w-full">
                 <label class="label">
-                  <span class="label-text">Project</span>
+                  <span class="label-text font-medium">Project</span>
                 </label>
-                <select name="project_id" required class="select select-bordered w-full">
+                <select name="project_id" required class="select select-bordered w-full text-sm sm:text-base">
                   <option disabled selected value="">Select a project...</option>
                   <%= for project <- @projects do %>
                     <option value={project.id}>
@@ -392,20 +406,20 @@ defmodule JikanWeb.DashboardLive do
                   <% end %>
                 </select>
               </div>
-              <div class="form-control w-full lg:w-1/2">
+              <div class="form-control w-full">
                 <label class="label">
-                  <span class="label-text">Description</span>
+                  <span class="label-text font-medium">Description <span class="text-xs text-base-content/70">(optional)</span></span>
                 </label>
                 <input 
                   type="text" 
                   name="description" 
                   placeholder="What are you working on?" 
-                  class="input input-bordered w-full"
+                  class="input input-bordered w-full text-sm sm:text-base"
                 />
               </div>
             </div>
-            <div class="card-actions justify-end mt-4">
-              <button type="submit" class="btn btn-primary gap-2">
+            <div class="flex justify-center sm:justify-end pt-2">
+              <button type="submit" class="btn btn-primary gap-2 w-full sm:w-auto min-h-12 text-base">
                 <.icon name="hero-play-circle" class="size-5" />
                 Start Timer
               </button>
