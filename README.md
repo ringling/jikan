@@ -3,6 +3,8 @@
 To start your Phoenix server:
 
 
+./bin/jikan remote
+
 ```bash
 # on local run
 ssh root@157.180.64.13 "docker run --rm -v jikan_data:/data -v \$(pwd):/backup alpine tar czf /backup/jikan_backup.tar.gz -C /data ."

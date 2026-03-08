@@ -291,6 +291,13 @@ defmodule JikanWeb.DashboardLive do
     mins = rem(minutes, 60)
     "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
   end
+  
+  defp format_net_minutes(duration_minutes, pause_duration_minutes) do
+    duration = duration_minutes || 0
+    pause = pause_duration_minutes || 0
+    net_minutes = max(0, duration - pause)
+    format_minutes(net_minutes)
+  end
 
   @impl true
   def render(assigns) do
@@ -679,12 +686,12 @@ defmodule JikanWeb.DashboardLive do
                         </div>
                         <div class="flex flex-col items-start">
                           <div class="badge badge-primary badge-sm">
-                            <%= format_minutes(entry.duration_minutes) %>
+                            <%= format_net_minutes(entry.duration_minutes, entry.pause_duration_minutes) %>
                           </div>
                           <%= if entry.pause_duration_minutes && entry.pause_duration_minutes > 0 do %>
                             <div class="badge badge-warning badge-xs mt-1">
                               <.icon name="hero-pause-circle" class="size-3 mr-1" />
-                              <%= format_minutes(entry.pause_duration_minutes) %>
+                              -<%= format_minutes(entry.pause_duration_minutes) %>
                             </div>
                           <% end %>
                         </div>

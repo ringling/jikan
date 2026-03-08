@@ -81,9 +81,9 @@ defmodule JikanWeb.TimeEntryLive.Show do
               
               <div class="space-y-4 mt-4">
                 <div class="stat">
-                  <div class="stat-title">Duration</div>
+                  <div class="stat-title">Net Duration</div>
                   <div class="stat-value text-primary text-2xl">
-                    {format_duration(@time_entry.duration_minutes)}
+                    {format_net_duration(@time_entry.duration_minutes, @time_entry.pause_duration_minutes)}
                   </div>
                 </div>
                 
@@ -153,6 +153,13 @@ defmodule JikanWeb.TimeEntryLive.Show do
     hours = div(minutes, 60)
     mins = rem(minutes, 60)
     "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
+  end
+  
+  defp format_net_duration(duration_minutes, pause_duration_minutes) do
+    duration = duration_minutes || 0
+    pause = pause_duration_minutes || 0
+    net_minutes = max(0, duration - pause)
+    format_duration(net_minutes)
   end
   
   defp format_time(nil), do: "-"

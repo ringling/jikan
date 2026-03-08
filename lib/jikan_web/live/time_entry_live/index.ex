@@ -188,12 +188,12 @@ defmodule JikanWeb.TimeEntryLive.Index do
                 <:col :let={{_id, time_entry}} label="Duration">
                   <div class="flex flex-col items-start">
                     <div class="badge badge-primary">
-                      {format_duration(time_entry.duration_minutes)}
+                      {format_net_duration(time_entry.duration_minutes, time_entry.pause_duration_minutes)}
                     </div>
                     <%= if time_entry.pause_duration_minutes && time_entry.pause_duration_minutes > 0 do %>
                       <div class="badge badge-warning badge-sm mt-1">
                         <.icon name="hero-pause-circle" class="size-3 mr-1" />
-                        {format_duration(time_entry.pause_duration_minutes)}
+                        -{format_duration(time_entry.pause_duration_minutes)}
                       </div>
                     <% end %>
                   </div>
@@ -262,6 +262,13 @@ defmodule JikanWeb.TimeEntryLive.Index do
     hours = div(minutes, 60)
     mins = rem(minutes, 60)
     "#{hours}:#{String.pad_leading(to_string(mins), 2, "0")}"
+  end
+  
+  defp format_net_duration(duration_minutes, pause_duration_minutes) do
+    duration = duration_minutes || 0
+    pause = pause_duration_minutes || 0
+    net_minutes = max(0, duration - pause)
+    format_duration(net_minutes)
   end
 
   defp format_month(date) do
