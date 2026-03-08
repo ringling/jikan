@@ -1,8 +1,8 @@
-# Claude Code Prompt: Elixir LiveView Time Registration App
+# Jikan - Time Tracking Application Architecture
 
 ## Project Overview
 
-Build a full-stack time registration web application using **Elixir**, **Phoenix LiveView**, and **SQLite**. The app allows users to log work hours against projects/clients, view summaries, and manage their time entries — all with real-time UI updates via LiveView (no JavaScript needed for core functionality).
+Jikan is a full-stack time tracking web application built with **Elixir**, **Phoenix LiveView**, and **PostgreSQL**. The app allows users to log work hours against projects/clients, track billable time with pause durations, manage hourly rates, view summaries, and export data — all with real-time UI updates via LiveView (no JavaScript needed for core functionality).
 
 ---
 
@@ -12,10 +12,33 @@ Build a full-stack time registration web application using **Elixir**, **Phoenix
 |--------------|-------------------------------------|
 | Language     | Elixir 1.16+                        |
 | Framework    | Phoenix 1.7+ with LiveView 0.20+   |
-| Database     | SQLite via `ecto_sqlite3`           |
+| Database     | PostgreSQL 15+ via `postgrex`       |
 | Auth         | `mix phx.gen.auth` (built-in)      |
-| CSS          | Tailwind CSS (ships with Phoenix)   |
+| CSS          | Tailwind CSS + DaisyUI              |
 | Build        | Mix, esbuild (Phoenix defaults)     |
+| Deployment   | Docker Compose                      |
+
+---
+
+## Key Features
+
+### Time Tracking
+- **Duration Tracking**: Manual entry or automatic calculation from start/end times
+- **Pause Duration**: Track breaks (lunch, meetings) that don't count toward billable time
+- **Net Duration**: Actual working time (duration - pauses) used for billing
+- **Timer Mode**: Real-time timer with pause/resume functionality
+
+### Hourly Rates & Billing
+- **Rate Hierarchy**: Entry → Project → Client default rate
+- **Automatic Calculation**: Total amount = Net Duration × Hourly Rate
+- **Billable Flag**: Track non-billable internal work separately
+- **Currency**: Danish Kroner (DKK)
+
+### Data Management
+- **CSV Export**: Export filtered data with smart filename generation
+- **Filtering**: By client, year, month, week (ISO week numbers)
+- **Dashboard**: Daily, weekly, and monthly summaries with revenue tracking
+- **Recent Entries**: Quick access to latest time entries
 
 ---
 
@@ -24,13 +47,13 @@ Build a full-stack time registration web application using **Elixir**, **Phoenix
 ### 1. Project Bootstrap
 
 ```bash
-mix phx.new time_reg --database sqlite3
-cd time_reg
+mix phx.new jikan
+cd jikan
 mix deps.get
 mix ecto.create
 ```
 
-Verify `mix.exs` has `{:ecto_sqlite3, "~> 0.17"}` and `config/dev.exs` points to a `.db` file.
+Verify `mix.exs` has `{:postgrex, ">= 0.0.0"}` and `config/dev.exs` points to PostgreSQL database.
 
 ### 2. Authentication & Role-Based Access
 
