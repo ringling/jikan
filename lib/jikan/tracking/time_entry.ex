@@ -36,12 +36,22 @@ defmodule Jikan.Tracking.TimeEntry do
   end
 
   defp calculate_duration(changeset) do
-    start_time = get_change(changeset, :start_time)
-    end_time = get_change(changeset, :end_time)
-
-    if start_time && end_time do
-      duration = Time.diff(end_time, start_time, :minute)
-      put_change(changeset, :duration_minutes, duration)
+    # Check if either time has changed
+    start_changed = get_change(changeset, :start_time)
+    end_changed = get_change(changeset, :end_time)
+    
+    # If either time changed, recalculate duration
+    if start_changed || end_changed do
+      # Get the actual values (from changes or existing data)
+      start_time = get_field(changeset, :start_time)
+      end_time = get_field(changeset, :end_time)
+      
+      if start_time && end_time do
+        duration = Time.diff(end_time, start_time, :minute)
+        put_change(changeset, :duration_minutes, duration)
+      else
+        changeset
+      end
     else
       changeset
     end
