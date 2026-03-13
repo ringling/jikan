@@ -247,14 +247,9 @@ defmodule JikanWeb.TimeEntryLive.Form do
     # Load projects with client data preloaded for rate information
     projects = Tracking.list_projects(user) |> Jikan.Repo.preload(:client)
 
-    # Only convert times to local for display if this entry was created before timezone fix
-    # Entries created after the timezone fix are already properly stored in UTC
-    time_entry_for_display = 
-      if needs_timezone_conversion_for_display?(time_entry) do
-        convert_times_to_local_for_display(time_entry)
-      else
-        time_entry
-      end
+    # Always convert UTC times to local timezone for display in forms
+    # This ensures consistent user experience regardless of when the entry was created
+    time_entry_for_display = convert_times_to_local_for_display(time_entry)
 
     socket
     |> assign(:page_title, "Edit Time Entry")
@@ -422,13 +417,6 @@ defmodule JikanWeb.TimeEntryLive.Form do
     end
   end
 
-  # Check if a time entry needs timezone conversion for display
-  # Only entries created before the timezone fix need conversion
-  defp needs_timezone_conversion_for_display?(time_entry) do
-    # The timezone fix was deployed on March 13, 2026 at 07:38:52 UTC
-    timezone_fix_timestamp = ~U[2026-03-13 07:38:52Z]
-    DateTime.compare(time_entry.inserted_at, timezone_fix_timestamp) == :lt
-  end
 
   # Convert times from UTC to local timezone for display in form
   defp convert_times_to_local_for_display(time_entry) do
