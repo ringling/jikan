@@ -447,12 +447,27 @@ defmodule JikanWeb.TimeEntryLive.Form do
       nil -> params
       "" -> params
       time_string when is_binary(time_string) ->
-        # Parse the time string and convert to UTC
-        case Time.from_iso8601(time_string <> ":00") do
+        # Parse the time string robustly (handles both HH:MM and HH:MM:SS formats)
+        parsed_time = 
+          cond do
+            # Try parsing as-is first (handles HH:MM:SS format)
+            match?({:ok, _}, Time.from_iso8601(time_string)) ->
+              Time.from_iso8601(time_string)
+            
+            # Try adding :00 for HH:MM format  
+            match?({:ok, _}, Time.from_iso8601(time_string <> ":00")) ->
+              Time.from_iso8601(time_string <> ":00")
+            
+            # Fallback: return error
+            true ->
+              {:error, :invalid_time}
+          end
+        
+        case parsed_time do
           {:ok, local_time} ->
             utc_time = Timezone.time_to_utc(local_time, date)
             Map.put(params, field, Time.to_string(utc_time))
-          _ -> params
+          _ -> params  # Keep original value if parsing fails
         end
       _ -> params
     end
