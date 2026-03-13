@@ -5,6 +5,7 @@ defmodule Jikan.Tracking do
 
   import Ecto.Query, warn: false
   alias Jikan.Repo
+  alias Jikan.Timezone
   alias Jikan.Tracking.{Client, Project, TimeEntry}
 
   # ===== CLIENT FUNCTIONS =====
@@ -624,8 +625,8 @@ defmodule Jikan.Tracking do
       time_entry.project.client.name,
       time_entry.project.name,
       time_entry.description || "",
-      format_time_for_csv(time_entry.start_time),
-      format_time_for_csv(time_entry.end_time),
+      format_time_for_csv(time_entry.start_time, time_entry.date),
+      format_time_for_csv(time_entry.end_time, time_entry.date),
       format_duration_for_csv(time_entry.duration_minutes),
       format_duration_for_csv(time_entry.pause_duration_minutes || 0),
       if(time_entry.billable, do: "Yes", else: "No"),
@@ -636,9 +637,13 @@ defmodule Jikan.Tracking do
     ]
   end
 
-  defp format_time_for_csv(nil), do: ""
-  defp format_time_for_csv(time) do
-    "#{String.pad_leading(to_string(time.hour), 2, "0")}:#{String.pad_leading(to_string(time.minute), 2, "0")}"
+  defp format_time_for_csv(nil, _date), do: ""
+  defp format_time_for_csv(time, date) do
+    # Convert UTC time to local timezone for display
+    local_dt = Timezone.time_to_local(time, date)
+    hour = local_dt.hour
+    minute = local_dt.minute
+    "#{String.pad_leading(to_string(hour), 2, "0")}:#{String.pad_leading(to_string(minute), 2, "0")}"
   end
 
   defp format_duration_for_csv(nil), do: "0:00"
