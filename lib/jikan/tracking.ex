@@ -620,6 +620,10 @@ defmodule Jikan.Tracking do
   end
 
   defp format_time_entry_for_csv(time_entry) do
+    # Calculate net duration (duration minus pause) to match Time Entries page display
+    net_duration_minutes = (time_entry.duration_minutes || 0) - (time_entry.pause_duration_minutes || 0)
+    net_duration_minutes = max(0, net_duration_minutes) # Ensure non-negative
+    
     [
       Calendar.strftime(time_entry.date, "%d.%m.%y"),
       time_entry.project.client.name,
@@ -627,7 +631,7 @@ defmodule Jikan.Tracking do
       time_entry.description || "",
       format_time_for_csv(time_entry.start_time, time_entry.date),
       format_time_for_csv(time_entry.end_time, time_entry.date),
-      format_duration_for_csv(time_entry.duration_minutes),
+      format_duration_for_csv(net_duration_minutes),
       format_duration_for_csv(time_entry.pause_duration_minutes || 0),
       if(time_entry.billable, do: "Yes", else: "No"),
       format_rate_for_csv(time_entry.hourly_rate),
