@@ -695,6 +695,11 @@ defmodule JikanWeb.DashboardLive do
                         <div class="badge badge-outline badge-sm">
                           <%= Calendar.strftime(entry.date, "%d.%m.%y") %>
                         </div>
+                        <%= if entry.start_time && entry.end_time do %>
+                          <div class="badge badge-neutral badge-sm">
+                            <%= format_local_time(entry.start_time, entry.date) %> - <%= format_local_time(entry.end_time, entry.date) %>
+                          </div>
+                        <% end %>
                         <div class="flex flex-col items-start">
                           <div class="badge badge-primary badge-sm">
                             <%= format_net_minutes(entry.duration_minutes, entry.pause_duration_minutes) %>
