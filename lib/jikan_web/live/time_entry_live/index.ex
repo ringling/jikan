@@ -31,24 +31,46 @@ defmodule JikanWeb.TimeEntryLive.Index do
         <!-- Quick Filters -->
         <div class="card bg-base-100 shadow-sm mb-4">
           <div class="card-body p-4">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-medium opacity-70">Quick Filters:</span>
-              <.button 
-                variant={if is_current_month_active?(@filters), do: "primary", else: "outline"}
-                phx-click="quick_filter_current_month"
-                class="btn-sm gap-1"
-              >
-                <.icon name="hero-calendar" class="size-4" />
-                Current Month
-              </.button>
-              <.button 
-                variant={if is_current_week_active?(@filters), do: "primary", else: "outline"}
-                phx-click="quick_filter_current_week"
-                class="btn-sm gap-1"
-              >
-                <.icon name="hero-calendar-days" class="size-4" />
-                Current Week
-              </.button>
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-sm font-medium opacity-70">Period:</span>
+              <div class="join">
+                <button 
+                  class={"btn btn-sm join-item " <> (if is_all_time_active?(@filters), do: "btn-primary", else: "btn-outline")}
+                  phx-click="quick_filter_all_time"
+                >
+                  <.icon name="hero-clock" class="size-4" />
+                  All Time
+                </button>
+                <button 
+                  class={"btn btn-sm join-item " <> (if is_current_month_active?(@filters), do: "btn-primary", else: "btn-outline")}
+                  phx-click="quick_filter_current_month"
+                >
+                  <.icon name="hero-calendar" class="size-4" />
+                  Current Month
+                  <%= if is_current_month_active?(@filters) do %>
+                    <.icon name="hero-check" class="size-3" />
+                  <% end %>
+                </button>
+                <button 
+                  class={"btn btn-sm join-item " <> (if is_current_week_active?(@filters), do: "btn-primary", else: "btn-outline")}
+                  phx-click="quick_filter_current_week"
+                >
+                  <.icon name="hero-calendar-days" class="size-4" />
+                  Current Week
+                  <%= if is_current_week_active?(@filters) do %>
+                    <.icon name="hero-check" class="size-3" />
+                  <% end %>
+                </button>
+              </div>
+              <%= if @filters["client_id"] && @filters["client_id"] != "" do %>
+                <div class="badge badge-info gap-1">
+                  <.icon name="hero-building-office" class="size-3" />
+                  <%= case Enum.find(@clients, &(&1.id == String.to_integer(@filters["client_id"]))) do
+                        nil -> "Unknown"
+                        client -> client.name
+                      end %>
+                </div>
+              <% end %>
             </div>
           </div>
         </div>
@@ -388,6 +410,27 @@ defmodule JikanWeb.TimeEntryLive.Index do
      |> push_patch(to: ~p"/time-entries")}
   end
 
+  def handle_event("quick_filter_all_time", _params, socket) do
+    user = socket.assigns.current_user
+    
+    # Keep existing client filter if set, clear all time filters
+    filters = %{
+      "client_id" => socket.assigns.filters["client_id"] || "",
+      "year" => "",
+      "month" => "",
+      "week" => ""
+    }
+    
+    time_entries = list_time_entries(user, filters)
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)
+     |> push_patch(to: ~p"/time-entries?#{filters}")}
+  end
+
   def handle_event("quick_filter_current_month", _params, socket) do
     user = socket.assigns.current_user
     {year, month} = get_current_month()
@@ -500,6 +543,13 @@ defmodule JikanWeb.TimeEntryLive.Index do
     today = Jikan.Timezone.local_today()
     {year, week} = :calendar.iso_week_number({today.year, today.month, today.day})
     {year, week}
+  end
+
+  defp is_all_time_active?(filters) do
+    # All time is active when no time filters are set
+    (filters["year"] == "" || filters["year"] == nil) &&
+    (filters["month"] == "" || filters["month"] == nil) &&
+    (filters["week"] == "" || filters["week"] == nil)
   end
 
   defp is_current_month_active?(filters) do
