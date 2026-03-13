@@ -28,6 +28,31 @@ defmodule JikanWeb.TimeEntryLive.Index do
           </:actions>
         </.header>
         
+        <!-- Quick Filters -->
+        <div class="card bg-base-100 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-medium opacity-70">Quick Filters:</span>
+              <.button 
+                variant={if is_current_month_active?(@filters), do: "primary", else: "outline"}
+                phx-click="quick_filter_current_month"
+                class="btn-sm gap-1"
+              >
+                <.icon name="hero-calendar" class="size-4" />
+                Current Month
+              </.button>
+              <.button 
+                variant={if is_current_week_active?(@filters), do: "primary", else: "outline"}
+                phx-click="quick_filter_current_week"
+                class="btn-sm gap-1"
+              >
+                <.icon name="hero-calendar-days" class="size-4" />
+                Current Week
+              </.button>
+            </div>
+          </div>
+        </div>
+        
         <!-- Filter Panel -->
         <div class="card bg-base-100 shadow-sm mb-4">
           <div class="card-body p-0">
@@ -363,6 +388,50 @@ defmodule JikanWeb.TimeEntryLive.Index do
      |> push_patch(to: ~p"/time-entries")}
   end
 
+  def handle_event("quick_filter_current_month", _params, socket) do
+    user = socket.assigns.current_user
+    {year, month} = get_current_month()
+    
+    # Keep existing client filter if set, reset other time filters
+    filters = %{
+      "client_id" => socket.assigns.filters["client_id"] || "",
+      "year" => to_string(year),
+      "month" => to_string(month),
+      "week" => ""
+    }
+    
+    time_entries = list_time_entries(user, filters)
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)
+     |> push_patch(to: ~p"/time-entries?#{filters}")}
+  end
+
+  def handle_event("quick_filter_current_week", _params, socket) do
+    user = socket.assigns.current_user
+    {year, week} = get_current_week()
+    
+    # Keep existing client filter if set, reset month filter
+    filters = %{
+      "client_id" => socket.assigns.filters["client_id"] || "",
+      "year" => to_string(year),
+      "month" => "",
+      "week" => to_string(week)
+    }
+    
+    time_entries = list_time_entries(user, filters)
+    
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> assign(:entry_count, length(time_entries))
+     |> stream(:time_entries, time_entries, reset: true)
+     |> push_patch(to: ~p"/time-entries?#{filters}")}
+  end
+
   defp list_time_entries(user, filters) do
     Tracking.list_time_entries(user, filters)
   end
@@ -418,6 +487,35 @@ defmodule JikanWeb.TimeEntryLive.Index do
 
   defp has_active_filters?(filters) do
     Enum.any?(filters, fn {_key, value} -> value != "" and not is_nil(value) end)
+  end
+
+  defp get_current_month do
+    # Use local timezone for current date
+    today = Jikan.Timezone.local_today()
+    {today.year, today.month}
+  end
+
+  defp get_current_week do
+    # Use local timezone for current date
+    today = Jikan.Timezone.local_today()
+    {year, week} = :calendar.iso_week_number({today.year, today.month, today.day})
+    {year, week}
+  end
+
+  defp is_current_month_active?(filters) do
+    {current_year, current_month} = get_current_month()
+    
+    filters["year"] == to_string(current_year) && 
+    filters["month"] == to_string(current_month) &&
+    (filters["week"] == "" || filters["week"] == nil)
+  end
+
+  defp is_current_week_active?(filters) do
+    {current_year, current_week} = get_current_week()
+    
+    filters["year"] == to_string(current_year) && 
+    filters["week"] == to_string(current_week) &&
+    (filters["month"] == "" || filters["month"] == nil)
   end
 
   defp build_export_url(filters) do
