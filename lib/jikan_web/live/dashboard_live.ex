@@ -2,6 +2,7 @@ defmodule JikanWeb.DashboardLive do
   use JikanWeb, :live_view
   alias Jikan.Tracking
   alias Jikan.Accounts.User
+  alias Jikan.Timezone
 
   @impl true
   def mount(_params, _session, socket) do
@@ -258,6 +259,7 @@ defmodule JikanWeb.DashboardLive do
   end
 
   defp calculate_elapsed(entry) do
+    # Calculate elapsed time in UTC (timezone doesn't affect duration)
     current_time = Time.utc_now()
     total_elapsed = Time.diff(current_time, entry.start_time, :second)
 
@@ -297,6 +299,11 @@ defmodule JikanWeb.DashboardLive do
     pause = pause_duration_minutes || 0
     net_minutes = max(0, duration - pause)
     format_minutes(net_minutes)
+  end
+
+  defp format_local_time(time, date) do
+    local_dt = Timezone.time_to_local(time, date)
+    Calendar.strftime(local_dt, "%H:%M")
   end
 
   @impl true
@@ -354,6 +361,10 @@ defmodule JikanWeb.DashboardLive do
             <p :if={@running_timer.description} class="text-sm">
               <.icon name="hero-document-text" class="size-4 inline mr-1" />
               <%= @running_timer.description %>
+            </p>
+            <p class="text-sm">
+              <.icon name="hero-clock" class="size-4 inline mr-1" />
+              Started at <%= format_local_time(@running_timer.start_time, @running_timer.date) %>
             </p>
           </div>
           <div class="card-actions justify-end mt-4">

@@ -3,6 +3,7 @@ defmodule JikanWeb.TimeEntryLive.Form do
 
   alias Jikan.Tracking
   alias Jikan.Tracking.TimeEntry
+  alias Jikan.Timezone
 
   @impl true
   def render(assigns) do
@@ -246,11 +247,14 @@ defmodule JikanWeb.TimeEntryLive.Form do
     # Load projects with client data preloaded for rate information
     projects = Tracking.list_projects(user) |> Jikan.Repo.preload(:client)
 
+    # Convert times to local for display
+    time_entry_with_local_times = convert_times_to_local_for_display(time_entry)
+
     socket
     |> assign(:page_title, "Edit Time Entry")
-    |> assign(:time_entry, time_entry)
+    |> assign(:time_entry, time_entry_with_local_times)
     |> assign(:projects, projects)
-    |> assign(:form, to_form(Tracking.change_time_entry(time_entry)))
+    |> assign(:form, to_form(Tracking.change_time_entry(time_entry_with_local_times)))
   end
 
   defp apply_action(socket, :new, _params) do
@@ -274,6 +278,8 @@ defmodule JikanWeb.TimeEntryLive.Form do
   end
 
   def handle_event("save", %{"time_entry" => time_entry_params}, socket) do
+    # Convert times from local to UTC before saving
+    time_entry_params = convert_times_to_utc_for_save(time_entry_params)
     save_time_entry(socket, socket.assigns.live_action, time_entry_params)
   end
 
@@ -407,6 +413,46 @@ defmodule JikanWeb.TimeEntryLive.Form do
       amount when not is_nil(amount) ->
         # Format as string with 2 decimal places
         :erlang.float_to_binary(Decimal.to_float(amount), [decimals: 2])
+    end
+  end
+
+  # Convert times from UTC to local timezone for display in form
+  defp convert_times_to_local_for_display(time_entry) do
+    %{time_entry | 
+      start_time: convert_time_to_local(time_entry.start_time, time_entry.date),
+      end_time: convert_time_to_local(time_entry.end_time, time_entry.date)
+    }
+  end
+
+  defp convert_time_to_local(nil, _date), do: nil
+  defp convert_time_to_local(time, date) do
+    local_dt = Timezone.time_to_local(time, date)
+    DateTime.to_time(local_dt)
+  end
+
+  # Convert times from local timezone to UTC for saving
+  defp convert_times_to_utc_for_save(params) do
+    date = params["date"] || Date.utc_today()
+    date = if is_binary(date), do: Date.from_iso8601!(date), else: date
+
+    params
+    |> maybe_convert_time_to_utc("start_time", date)
+    |> maybe_convert_time_to_utc("end_time", date)
+  end
+
+  defp maybe_convert_time_to_utc(params, field, date) do
+    case params[field] do
+      nil -> params
+      "" -> params
+      time_string when is_binary(time_string) ->
+        # Parse the time string and convert to UTC
+        case Time.from_iso8601(time_string <> ":00") do
+          {:ok, local_time} ->
+            utc_time = Timezone.time_to_utc(local_time, date)
+            Map.put(params, field, Time.to_string(utc_time))
+          _ -> params
+        end
+      _ -> params
     end
   end
 end

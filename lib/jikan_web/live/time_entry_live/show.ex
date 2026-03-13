@@ -2,6 +2,7 @@ defmodule JikanWeb.TimeEntryLive.Show do
   use JikanWeb, :live_view
 
   alias Jikan.Tracking
+  alias Jikan.Timezone
 
   @impl true
   def render(assigns) do
@@ -93,7 +94,7 @@ defmodule JikanWeb.TimeEntryLive.Show do
                   <div class="text-sm opacity-70 mb-2">Time Range</div>
                   <div class="badge badge-outline badge-lg">
                     <%= if @time_entry.start_time && @time_entry.end_time do %>
-                      {format_time(@time_entry.start_time)} - {format_time(@time_entry.end_time)}
+                      {format_local_time(@time_entry.start_time, @time_entry.date)} - {format_local_time(@time_entry.end_time, @time_entry.date)}
                     <% else %>
                       Manual entry
                     <% end %>
@@ -162,18 +163,10 @@ defmodule JikanWeb.TimeEntryLive.Show do
     format_duration(net_minutes)
   end
   
-  defp format_time(nil), do: "-"
-  defp format_time(time) do
-    case time do
-      %Time{} = t ->
-        hour = t.hour
-        minute = t.minute
-        "#{String.pad_leading(to_string(hour), 2, "0")}:#{String.pad_leading(to_string(minute), 2, "0")}"
-      
-      _ ->
-        # Fallback for other time formats
-        to_string(time)
-    end
+  defp format_local_time(nil, _date), do: "-"
+  defp format_local_time(time, date) do
+    local_dt = Timezone.time_to_local(time, date)
+    Calendar.strftime(local_dt, "%H:%M")
   end
 
   @impl true

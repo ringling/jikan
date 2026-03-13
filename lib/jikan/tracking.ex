@@ -36,7 +36,12 @@ defmodule Jikan.Tracking do
   Creates a client for a user.
   """
   def create_client(user, attrs) do
-    attrs = Map.put(attrs, "user_id", user.id)
+    # Convert attrs to string keys and add user_id
+    attrs = 
+      attrs
+      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
+      |> Enum.into(%{})
+      |> Map.put("user_id", user.id)
     
     %Client{}
     |> Client.changeset(attrs)
@@ -97,7 +102,12 @@ defmodule Jikan.Tracking do
   Creates a project for a user.
   """
   def create_project(user, attrs) do
-    attrs = Map.put(attrs, "user_id", user.id)
+    # Convert attrs to string keys and add user_id
+    attrs = 
+      attrs
+      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
+      |> Enum.into(%{})
+      |> Map.put("user_id", user.id)
     
     %Project{}
     |> Project.changeset(attrs)
@@ -221,7 +231,12 @@ defmodule Jikan.Tracking do
   Creates a time entry for a user.
   """
   def create_time_entry(user, attrs) do
-    attrs = Map.put(attrs, "user_id", user.id)
+    # Convert attrs to string keys and add user_id
+    attrs = 
+      attrs
+      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
+      |> Enum.into(%{})
+      |> Map.put("user_id", user.id)
     
     # Determine hourly rate if not explicitly provided
     attrs = maybe_set_hourly_rate(attrs)

@@ -7,7 +7,7 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a client.
   """
-  def client_fixture(attrs \\ %{}) do
+  def client_fixture(user, attrs \\ %{}) do
     {:ok, client} =
       attrs
       |> Enum.into(%{
@@ -15,7 +15,7 @@ defmodule Jikan.TrackingFixtures do
         contact_email: "some contact_email",
         name: "some name"
       })
-      |> Jikan.Tracking.create_client()
+      |> then(fn attrs -> Jikan.Tracking.create_client(user, attrs) end)
 
     client
   end
@@ -23,7 +23,7 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a project.
   """
-  def project_fixture(attrs \\ %{}) do
+  def project_fixture(user, attrs \\ %{}) do
     {:ok, project} =
       attrs
       |> Enum.into(%{
@@ -32,7 +32,7 @@ defmodule Jikan.TrackingFixtures do
         description: "some description",
         name: "some name"
       })
-      |> Jikan.Tracking.create_project()
+      |> then(fn attrs -> Jikan.Tracking.create_project(user, attrs) end)
 
     project
   end
@@ -40,7 +40,7 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a time_entry.
   """
-  def time_entry_fixture(attrs \\ %{}) do
+  def time_entry_fixture(user, attrs \\ %{}) do
     {:ok, time_entry} =
       attrs
       |> Enum.into(%{
@@ -51,7 +51,7 @@ defmodule Jikan.TrackingFixtures do
         end_time: ~T[14:00:00],
         start_time: ~T[14:00:00]
       })
-      |> Jikan.Tracking.create_time_entry()
+      |> then(fn attrs -> Jikan.Tracking.create_time_entry(user, attrs) end)
 
     time_entry
   end
