@@ -10,8 +10,8 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
   describe "Timezone conversion in Time Entry forms" do
     setup %{conn: conn} do
       user = user_fixture()
-      client = client_fixture(user)
-      project = project_fixture(user, %{client_id: client.id, color: "#3B82F6"})
+      client = client_fixture(user, %{default_hourly_rate: Decimal.new("500.00")})
+      project = project_fixture(user, %{client_id: client.id, color: "#3B82F6", hourly_rate: Decimal.new("600.00")})
       
       %{user: user, client: client, project: project, conn: log_in_user(conn, user)}
     end
@@ -196,11 +196,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
       assert html =~ "value=\"07:00:00\""  # end_time preserved as CET
     end
 
-    test "Update Rate & Total button with timezone conversion", %{conn: conn, user: user} do
-      # Create a client and project with hourly rates
-      client = client_fixture(user, %{default_hourly_rate: Decimal.new("500.00")})
-      project = project_fixture(user, %{client_id: client.id, hourly_rate: Decimal.new("600.00"), color: "#10B981"})
-
+    test "Update Rate & Total button with timezone conversion", %{conn: conn, project: project} do
       {:ok, live, _html} = live(conn, ~p"/time-entries/new")
 
       # Fill form with CET times

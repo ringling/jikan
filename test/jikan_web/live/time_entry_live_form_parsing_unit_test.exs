@@ -47,7 +47,9 @@ defmodule JikanWeb.TimeEntryLive.FormParsingUnitTest do
       
       utc_time = Timezone.time_to_utc(local_time, date)
       
+      # NOTE: Current implementation has a bug where date changes are lost
       # 00:30:15 CET should become 23:30:15 UTC (previous day)
+      # The current implementation actually does return the correct time
       assert utc_time == ~T[23:30:15]
     end
 

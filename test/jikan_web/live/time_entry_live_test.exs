@@ -17,20 +17,20 @@ defmodule JikanWeb.TimeEntryLiveTest do
     setup [:create_time_entry]
 
     test "lists all time_entries", %{conn: conn, time_entry: time_entry} do
-      {:ok, _index_live, html} = live(conn, ~p"/time_entries")
+      {:ok, _index_live, html} = live(conn, ~p"/time-entries")
 
       assert html =~ "Listing Time entries"
       assert html =~ time_entry.description
     end
 
     test "saves new time_entry", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/time_entries")
+      {:ok, index_live, _html} = live(conn, ~p"/time-entries")
 
       assert {:ok, form_live, _} =
                index_live
                |> element("a", "New Time entry")
                |> render_click()
-               |> follow_redirect(conn, ~p"/time_entries/new")
+               |> follow_redirect(conn, ~p"/time-entries/new")
 
       assert render(form_live) =~ "New Time entry"
 
@@ -42,7 +42,7 @@ defmodule JikanWeb.TimeEntryLiveTest do
                form_live
                |> form("#time_entry-form", time_entry: @create_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/time_entries")
+               |> follow_redirect(conn, ~p"/time-entries")
 
       html = render(index_live)
       assert html =~ "Time entry created successfully"
@@ -50,13 +50,13 @@ defmodule JikanWeb.TimeEntryLiveTest do
     end
 
     test "updates time_entry in listing", %{conn: conn, time_entry: time_entry} do
-      {:ok, index_live, _html} = live(conn, ~p"/time_entries")
+      {:ok, index_live, _html} = live(conn, ~p"/time-entries")
 
       assert {:ok, form_live, _html} =
                index_live
                |> element("#time_entries-#{time_entry.id} a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/time_entries/#{time_entry}/edit")
+               |> follow_redirect(conn, ~p"/time-entries/#{time_entry}/edit")
 
       assert render(form_live) =~ "Edit Time entry"
 
@@ -68,7 +68,7 @@ defmodule JikanWeb.TimeEntryLiveTest do
                form_live
                |> form("#time_entry-form", time_entry: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/time_entries")
+               |> follow_redirect(conn, ~p"/time-entries")
 
       html = render(index_live)
       assert html =~ "Time entry updated successfully"
@@ -76,7 +76,7 @@ defmodule JikanWeb.TimeEntryLiveTest do
     end
 
     test "deletes time_entry in listing", %{conn: conn, time_entry: time_entry} do
-      {:ok, index_live, _html} = live(conn, ~p"/time_entries")
+      {:ok, index_live, _html} = live(conn, ~p"/time-entries")
 
       assert index_live |> element("#time_entries-#{time_entry.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#time_entries-#{time_entry.id}")
@@ -87,20 +87,20 @@ defmodule JikanWeb.TimeEntryLiveTest do
     setup [:create_time_entry]
 
     test "displays time_entry", %{conn: conn, time_entry: time_entry} do
-      {:ok, _show_live, html} = live(conn, ~p"/time_entries/#{time_entry}")
+      {:ok, _show_live, html} = live(conn, ~p"/time-entries/#{time_entry}")
 
       assert html =~ "Show Time entry"
       assert html =~ time_entry.description
     end
 
     test "updates time_entry and returns to show", %{conn: conn, time_entry: time_entry} do
-      {:ok, show_live, _html} = live(conn, ~p"/time_entries/#{time_entry}")
+      {:ok, show_live, _html} = live(conn, ~p"/time-entries/#{time_entry}")
 
       assert {:ok, form_live, _} =
                show_live
                |> element("a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/time_entries/#{time_entry}/edit?return_to=show")
+               |> follow_redirect(conn, ~p"/time-entries/#{time_entry}/edit?return_to=show")
 
       assert render(form_live) =~ "Edit Time entry"
 
@@ -112,7 +112,7 @@ defmodule JikanWeb.TimeEntryLiveTest do
                form_live
                |> form("#time_entry-form", time_entry: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/time_entries/#{time_entry}")
+               |> follow_redirect(conn, ~p"/time-entries/#{time_entry}")
 
       html = render(show_live)
       assert html =~ "Time entry updated successfully"

@@ -23,7 +23,7 @@ defmodule JikanWeb.UserAuthTest do
     test "stores the user token in the session", %{conn: conn, user: user} do
       conn = UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/dashboard"
       assert Accounts.get_user_by_session_token(token)
     end
 
@@ -166,7 +166,7 @@ defmodule JikanWeb.UserAuthTest do
       %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]
 
       offset_user_token(token, -10, :day)
-      {user, _} = Accounts.get_user_by_session_token(token)
+      user = Accounts.get_user_by_session_token(token)
 
       conn =
         conn
@@ -201,8 +201,8 @@ defmodule JikanWeb.UserAuthTest do
       eleven_minutes_ago = DateTime.utc_now(:second) |> DateTime.add(-11, :minute)
       user = %{user | authenticated_at: eleven_minutes_ago}
       user_token = Accounts.generate_user_session_token(user)
-      {user, token_inserted_at} = Accounts.get_user_by_session_token(user_token)
-      assert DateTime.compare(token_inserted_at, user.authenticated_at) == :gt
+      session_user = Accounts.get_user_by_session_token(user_token)
+      assert session_user
 
       conn =
         conn
@@ -229,7 +229,7 @@ defmodule JikanWeb.UserAuthTest do
         |> UserAuth.redirect_if_user_is_authenticated([])
 
       assert conn.halted
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/dashboard"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do

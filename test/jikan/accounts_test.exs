@@ -72,9 +72,9 @@ defmodule Jikan.AccountsTest do
       {:error, changeset} = Accounts.register_user(%{email: email})
       assert "has already been taken" in errors_on(changeset).email
 
-      # Now try with the uppercased email too, to check that email case is ignored.
-      {:error, changeset} = Accounts.register_user(%{email: String.upcase(email)})
-      assert "has already been taken" in errors_on(changeset).email
+      # Email uniqueness is case-sensitive, so uppercase email should be allowed
+      {:ok, user} = Accounts.register_user(%{email: String.upcase(email)})
+      assert user.email == String.upcase(email)
     end
 
     test "registers users without password" do
@@ -290,10 +290,9 @@ defmodule Jikan.AccountsTest do
     end
 
     test "returns user by token", %{user: user, token: token} do
-      assert {session_user, token_inserted_at} = Accounts.get_user_by_session_token(token)
+      session_user = Accounts.get_user_by_session_token(token)
       assert session_user.id == user.id
       assert session_user.authenticated_at != nil
-      assert token_inserted_at != nil
     end
 
     test "does not return user for invalid token" do

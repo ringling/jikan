@@ -7,10 +7,14 @@ defmodule JikanWeb.ClientLiveTest do
   @create_attrs %{active: true, name: "some name", contact_email: "some contact_email"}
   @update_attrs %{active: false, name: "some updated name", contact_email: "some updated contact_email"}
   @invalid_attrs %{active: false, name: nil, contact_email: nil}
-  defp create_client(_) do
-    client = client_fixture()
+  defp create_client(%{conn: conn}) do
+    user = Jikan.AccountsFixtures.user_fixture()
+    # Update user role to manager
+    {:ok, user} = Jikan.Repo.update(Ecto.Changeset.change(user, role: "manager"))
+    client = client_fixture(user)
+    conn = log_in_user(conn, user)
 
-    %{client: client}
+    %{client: client, user: user, conn: conn}
   end
 
   describe "Index" do
