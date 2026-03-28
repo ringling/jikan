@@ -9,12 +9,20 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a client.
   """
-  def client_fixture(attrs \\ %{}) do
+  # Single parameter - could be attrs map or user struct
+  def client_fixture(param \\ %{})
+  
+  def client_fixture(%Jikan.Accounts.User{} = user) do
+    client_fixture(user, %{})
+  end
+  
+  def client_fixture(attrs) when is_map(attrs) do
     user = user_fixture()
     client_fixture(user, attrs)
   end
-
-  def client_fixture(user, attrs) do
+  
+  # Two parameters - user and attrs
+  def client_fixture(%Jikan.Accounts.User{} = user, attrs) when is_map(attrs) do
     {:ok, client} =
       attrs
       |> Enum.into(%{
@@ -30,12 +38,20 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a project.
   """
-  def project_fixture(attrs \\ %{}) do
+  # Single parameter - could be attrs map or user struct
+  def project_fixture(param \\ %{})
+  
+  def project_fixture(%Jikan.Accounts.User{} = user) do
+    project_fixture(user, %{})
+  end
+  
+  def project_fixture(attrs) when is_map(attrs) do
     user = user_fixture()
     project_fixture(user, attrs)
   end
 
-  def project_fixture(user, attrs) do
+  # Two parameters - user and attrs
+  def project_fixture(%Jikan.Accounts.User{} = user, attrs) when is_map(attrs) do
     # Create a client if client_id is not provided
     attrs = 
       if Map.has_key?(attrs, :client_id) do
@@ -61,12 +77,20 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a time_entry.
   """
-  def time_entry_fixture(attrs \\ %{}) do
+  # Single parameter - could be attrs map or user struct
+  def time_entry_fixture(param \\ %{})
+  
+  def time_entry_fixture(%Jikan.Accounts.User{} = user) do
+    time_entry_fixture(user, %{})
+  end
+  
+  def time_entry_fixture(attrs) when is_map(attrs) do
     user = user_fixture()
     time_entry_fixture(user, attrs)
   end
 
-  def time_entry_fixture(user, attrs) do
+  # Two parameters - user and attrs
+  def time_entry_fixture(%Jikan.Accounts.User{} = user, attrs) when is_map(attrs) do
     # Create a project if project_id is not provided
     attrs = 
       if Map.has_key?(attrs, :project_id) do
@@ -84,7 +108,8 @@ defmodule Jikan.TrackingFixtures do
         description: "some description",
         duration_minutes: 42,
         end_time: ~T[14:00:00],
-        start_time: ~T[14:00:00]
+        start_time: ~T[14:00:00],
+        pause_duration_minutes: 0
       })
       |> then(fn attrs -> Jikan.Tracking.create_time_entry(user, attrs) end)
 
