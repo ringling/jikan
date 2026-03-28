@@ -7,10 +7,14 @@ defmodule JikanWeb.TimeEntryLiveTest do
   @create_attrs %{date: "2026-03-02", description: "some description", start_time: "14:00", end_time: "14:00", duration_minutes: 42, billable: true}
   @update_attrs %{date: "2026-03-03", description: "some updated description", start_time: "15:01", end_time: "15:01", duration_minutes: 43, billable: false}
   @invalid_attrs %{date: nil, description: nil, start_time: nil, end_time: nil, duration_minutes: nil, billable: false}
-  defp create_time_entry(_) do
-    time_entry = time_entry_fixture()
+  defp create_time_entry(%{conn: conn}) do
+    user = Jikan.AccountsFixtures.user_fixture()
+    client = client_fixture(user)
+    project = project_fixture(user, %{client_id: client.id, color: "#3B82F6"})
+    time_entry = time_entry_fixture(user, %{project_id: project.id})
+    conn = log_in_user(conn, user)
 
-    %{time_entry: time_entry}
+    %{time_entry: time_entry, user: user, client: client, project: project, conn: conn}
   end
 
   describe "Index" do

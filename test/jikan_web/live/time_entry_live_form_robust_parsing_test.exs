@@ -16,9 +16,9 @@ defmodule JikanWeb.TimeEntryLive.FormRobustParsingTest do
       %{user: user, client: client, project: project, conn: log_in_user(conn, user)}
     end
 
-    test "handles HH:MM:SS format correctly", %{conn: conn, project: project} do
+    test "handles HH:MM:SS format correctly", %{conn: conn, project: project, user: user} do
       # Create a time entry with precise times including seconds
-      {:ok, time_entry} = Tracking.create_time_entry(conn.assigns.current_user, %{
+      {:ok, time_entry} = Tracking.create_time_entry(user, %{
         project_id: project.id,
         date: ~D[2026-03-13],
         start_time: ~T[06:14:18], # UTC time with seconds
@@ -61,7 +61,7 @@ defmodule JikanWeb.TimeEntryLive.FormRobustParsingTest do
       assert updated_entry.description == "Updated with seconds format"
     end
 
-    test "handles HH:MM format correctly", %{conn: conn, project: project} do
+    test "handles HH:MM format correctly", %{conn: conn, project: project, user: user} do
       {:ok, live, _html} = live(conn, ~p"/time-entries/new")
 
       # Submit form with HH:MM format (no seconds)
@@ -83,7 +83,7 @@ defmodule JikanWeb.TimeEntryLive.FormRobustParsingTest do
         |> follow_redirect(conn, ~p"/time-entries")
 
       # Get the created entry
-      time_entry = Tracking.list_time_entries(conn.assigns.current_user) |> List.first()
+      time_entry = Tracking.list_time_entries(user) |> List.first()
 
       # Verify times were correctly converted to UTC
       assert time_entry.start_time == ~T[08:15:00]  # 09:15 CET - 1 hour = 08:15 UTC
@@ -91,7 +91,7 @@ defmodule JikanWeb.TimeEntryLive.FormRobustParsingTest do
       assert time_entry.description == "No seconds format test"
     end
 
-    test "handles edge case: midnight times correctly", %{conn: conn, project: project} do
+    test "handles edge case: midnight times correctly", %{conn: conn, project: project, user: user} do
       {:ok, live, _html} = live(conn, ~p"/time-entries/new")
 
       # Test midnight edge case with seconds
@@ -113,14 +113,14 @@ defmodule JikanWeb.TimeEntryLive.FormRobustParsingTest do
         |> follow_redirect(conn, ~p"/time-entries")
 
       # Get created entry
-      time_entry = Tracking.list_time_entries(conn.assigns.current_user) |> List.first()
+      time_entry = Tracking.list_time_entries(user) |> List.first()
 
       # Verify correct UTC conversion (00:30:45 CET = 23:30:45 UTC previous day)
       assert time_entry.start_time == ~T[23:30:45]  # 00:30:45 CET - 1 hour = 23:30:45 UTC
       assert time_entry.end_time == ~T[07:15:30]    # 08:15:30 CET - 1 hour = 07:15:30 UTC
     end
 
-    test "handles invalid time format gracefully", %{conn: conn, project: project} do
+    test "handles invalid time format gracefully", %{conn: conn, project: project, user: user} do
       {:ok, live, _html} = live(conn, ~p"/time-entries/new")
 
       # Submit form with invalid time format

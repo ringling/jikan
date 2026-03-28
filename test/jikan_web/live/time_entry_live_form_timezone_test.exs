@@ -58,7 +58,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
       # Create a time entry with specific UTC times as if it was created before timezone fix
       historical_date = ~D[2026-01-15]
       {:ok, time_entry} = Tracking.create_time_entry(user, %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: historical_date,
         start_time: ~T[08:00:00], # UTC time
         end_time: ~T[16:00:00],   # UTC time  
@@ -80,7 +80,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
       # Create a time entry as if created after timezone fix with proper UTC storage
       recent_date = ~D[2026-03-13] 
       {:ok, time_entry} = Tracking.create_time_entry(user, %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: recent_date,
         start_time: ~T[06:00:00], # Already properly stored as UTC
         end_time: ~T[14:00:00],   # Already properly stored as UTC
@@ -103,7 +103,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
 
       # Enter midnight time in CET - should convert to 23:00 UTC previous day
       form_data = %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: "2026-03-13",
         start_time: "00:30", # 00:30 CET
         end_time: "08:30",   # 08:30 CET
@@ -138,7 +138,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
 
       # Use a summer date when Berlin is CEST (UTC+2)
       form_data = %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: "2026-07-15", # Summer date (CEST = UTC+2)
         start_time: "09:00", # 09:00 CEST
         end_time: "17:00",   # 17:00 CEST  
@@ -173,7 +173,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
 
       # Submit invalid form with timezone-aware times
       invalid_data = %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: "2026-03-13",
         start_time: "08:00", # CET time
         end_time: "07:00",   # Earlier end time (invalid)
@@ -201,7 +201,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
 
       # Fill form with CET times
       form_data = %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: "2026-03-13",
         start_time: "09:00", # CET
         end_time: "17:00",   # CET (8 hours)
@@ -227,12 +227,12 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
       assert html =~ "value=\"17:00:00\""
     end
 
-    test "handles nil times gracefully during conversion", %{conn: conn, project: project} do
+    test "handles nil times gracefully during conversion", %{conn: conn, project: project, user: user} do
       {:ok, live, _html} = live(conn, ~p"/time-entries/new")
 
       # Submit form with only duration, no start/end times
       form_data = %{
-        project_id: project.id,
+        project_id: to_string(project.id),
         date: "2026-03-13", 
         start_time: "",  # Empty
         end_time: "",    # Empty
@@ -249,7 +249,7 @@ defmodule JikanWeb.TimeEntryLive.FormTimezoneTest do
         |> follow_redirect(conn, ~p"/time-entries")
 
       # Get the created time entry
-      time_entry = Tracking.list_time_entries(conn.assigns.current_user) |> List.first()
+      time_entry = Tracking.list_time_entries(user) |> List.first()
       
       # Should have nil times and only duration
       assert time_entry.start_time == nil

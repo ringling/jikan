@@ -4,13 +4,18 @@ defmodule JikanWeb.ProjectLiveTest do
   import Phoenix.LiveViewTest
   import Jikan.TrackingFixtures
 
-  @create_attrs %{name: "some name", description: "some description", color: "some color", archived: true}
-  @update_attrs %{name: "some updated name", description: "some updated description", color: "some updated color", archived: false}
+  @create_attrs %{name: "some name", description: "some description", color: "#FF5722", archived: true}
+  @update_attrs %{name: "some updated name", description: "some updated description", color: "#2196F3", archived: false}
   @invalid_attrs %{name: nil, description: nil, color: nil, archived: false}
-  defp create_project(_) do
-    project = project_fixture()
+  defp create_project(%{conn: conn}) do
+    user = Jikan.AccountsFixtures.user_fixture()
+    # Update user role to manager for project access
+    {:ok, user} = Jikan.Repo.update(Ecto.Changeset.change(user, role: "manager"))
+    client = client_fixture(user)
+    project = project_fixture(user, %{client_id: client.id, color: "#3B82F6"})
+    conn = log_in_user(conn, user)
 
-    %{project: project}
+    %{project: project, user: user, client: client, conn: conn}
   end
 
   describe "Index" do
