@@ -107,7 +107,7 @@ defmodule Jikan.TrackingFixtures do
         date: ~D[2026-03-02],
         description: "some description",
         duration_minutes: 42,
-        end_time: ~T[14:00:00],
+        end_time: ~T[14:42:00],
         start_time: ~T[14:00:00],
         pause_duration_minutes: 0
       })

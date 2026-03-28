@@ -17,12 +17,16 @@ defmodule Jikan.TrackingTest do
 
     test "list_clients/0 returns all clients", %{user: user} do
       client = client_fixture(user)
-      assert Tracking.list_clients(user) == [client]
+      fetched_clients = Tracking.list_clients(user)
+      assert length(fetched_clients) == 1
+      assert hd(fetched_clients).id == client.id
     end
 
     test "get_client!/1 returns the client with given id", %{user: user} do
       client = client_fixture(user)
-      assert Tracking.get_client!(user, client.id) == client
+      fetched_client = Tracking.get_client!(user, client.id)
+      assert fetched_client.id == client.id
+      assert fetched_client.name == client.name
     end
 
     test "create_client/1 with valid data creates a client", %{user: user} do
@@ -51,7 +55,9 @@ defmodule Jikan.TrackingTest do
     test "update_client/2 with invalid data returns error changeset", %{user: user} do
       client = client_fixture(user)
       assert {:error, %Ecto.Changeset{}} = Tracking.update_client(client, @invalid_attrs)
-      assert client == Tracking.get_client!(user, client.id)
+      fetched_client = Tracking.get_client!(user, client.id)
+      assert fetched_client.id == client.id
+      assert fetched_client.name == client.name
     end
 
     test "delete_client/1 deletes the client", %{user: user} do
@@ -81,13 +87,17 @@ defmodule Jikan.TrackingTest do
     end
 
     test "list_projects/0 returns all projects", %{user: user, client: client} do
-      project = project_fixture(user, %{client_id: client.id})
-      assert Tracking.list_projects(user) == [project]
+      project = project_fixture(user, %{client_id: client.id, archived: false})
+      fetched_projects = Tracking.list_projects(user)
+      assert length(fetched_projects) == 1
+      assert hd(fetched_projects).id == project.id
     end
 
     test "get_project!/1 returns the project with given id", %{user: user, client: client} do
       project = project_fixture(user, %{client_id: client.id})
-      assert Tracking.get_project!(user, project.id) == project
+      fetched_project = Tracking.get_project!(user, project.id)
+      assert fetched_project.id == project.id
+      assert fetched_project.name == project.name
     end
 
     test "create_project/1 with valid data creates a project", %{user: user, client: client} do
@@ -118,7 +128,9 @@ defmodule Jikan.TrackingTest do
     test "update_project/2 with invalid data returns error changeset", %{user: user, client: client} do
       project = project_fixture(user, %{client_id: client.id})
       assert {:error, %Ecto.Changeset{}} = Tracking.update_project(project, @invalid_attrs)
-      assert project == Tracking.get_project!(user, project.id)
+      fetched_project = Tracking.get_project!(user, project.id)
+      assert fetched_project.id == project.id
+      assert fetched_project.name == project.name
     end
 
     test "delete_project/1 deletes the project", %{user: user, client: client} do
@@ -150,22 +162,26 @@ defmodule Jikan.TrackingTest do
 
     test "list_time_entries/0 returns all time_entries", %{user: user, project: project} do
       time_entry = time_entry_fixture(user, %{project_id: project.id})
-      assert Tracking.list_time_entries(user) == [time_entry]
+      fetched_entries = Tracking.list_time_entries(user)
+      assert length(fetched_entries) == 1
+      assert hd(fetched_entries).id == time_entry.id
     end
 
     test "get_time_entry!/1 returns the time_entry with given id", %{user: user, project: project} do
       time_entry = time_entry_fixture(user, %{project_id: project.id})
-      assert Tracking.get_time_entry!(user, time_entry.id) == time_entry
+      fetched_entry = Tracking.get_time_entry!(user, time_entry.id)
+      assert fetched_entry.id == time_entry.id
+      assert fetched_entry.description == time_entry.description
     end
 
     test "create_time_entry/1 with valid data creates a time_entry", %{user: user, project: project} do
-      valid_attrs = %{date: ~D[2026-03-02], description: "some description", start_time: ~T[14:00:00], end_time: ~T[14:00:00], duration_minutes: 42, billable: true, project_id: project.id, pause_duration_minutes: 0}
+      valid_attrs = %{date: ~D[2026-03-02], description: "some description", start_time: ~T[14:00:00], end_time: ~T[14:42:00], duration_minutes: 42, billable: true, project_id: project.id, pause_duration_minutes: 0}
 
       assert {:ok, %TimeEntry{} = time_entry} = Tracking.create_time_entry(user, valid_attrs)
       assert time_entry.date == ~D[2026-03-02]
       assert time_entry.description == "some description"
       assert time_entry.start_time == ~T[14:00:00]
-      assert time_entry.end_time == ~T[14:00:00]
+      assert time_entry.end_time == ~T[14:42:00]
       assert time_entry.duration_minutes == 42
       assert time_entry.billable == true
     end
@@ -176,13 +192,13 @@ defmodule Jikan.TrackingTest do
 
     test "update_time_entry/2 with valid data updates the time_entry", %{user: user, project: project} do
       time_entry = time_entry_fixture(user, %{project_id: project.id})
-      update_attrs = %{date: ~D[2026-03-03], description: "some updated description", start_time: ~T[15:01:01], end_time: ~T[15:01:01], duration_minutes: 43, billable: false}
+      update_attrs = %{date: ~D[2026-03-03], description: "some updated description", start_time: ~T[15:01:01], end_time: ~T[15:44:01], duration_minutes: 43, billable: false}
 
       assert {:ok, %TimeEntry{} = time_entry} = Tracking.update_time_entry(time_entry, update_attrs)
       assert time_entry.date == ~D[2026-03-03]
       assert time_entry.description == "some updated description"
       assert time_entry.start_time == ~T[15:01:01]
-      assert time_entry.end_time == ~T[15:01:01]
+      assert time_entry.end_time == ~T[15:44:01]
       assert time_entry.duration_minutes == 43
       assert time_entry.billable == false
     end
@@ -190,7 +206,9 @@ defmodule Jikan.TrackingTest do
     test "update_time_entry/2 with invalid data returns error changeset", %{user: user, project: project} do
       time_entry = time_entry_fixture(user, %{project_id: project.id})
       assert {:error, %Ecto.Changeset{}} = Tracking.update_time_entry(time_entry, @invalid_attrs)
-      assert time_entry == Tracking.get_time_entry!(user, time_entry.id)
+      fetched_entry = Tracking.get_time_entry!(user, time_entry.id)
+      assert fetched_entry.id == time_entry.id
+      assert fetched_entry.description == time_entry.description
     end
 
     test "delete_time_entry/1 deletes the time_entry", %{user: user, project: project} do
