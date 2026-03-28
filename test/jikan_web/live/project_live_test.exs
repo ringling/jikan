@@ -4,7 +4,7 @@ defmodule JikanWeb.ProjectLiveTest do
   import Phoenix.LiveViewTest
   import Jikan.TrackingFixtures
 
-  @create_attrs %{name: "some name", description: "some description", color: "#FF5722", archived: true}
+  @create_attrs %{name: "some name", description: "some description", color: "#FF5722", archived: false}
   @update_attrs %{name: "some updated name", description: "some updated description", color: "#2196F3", archived: false}
   @invalid_attrs %{name: nil, description: nil, color: nil, archived: false}
   defp create_project(%{conn: conn}) do
@@ -12,7 +12,7 @@ defmodule JikanWeb.ProjectLiveTest do
     # Update user role to manager for project access
     {:ok, user} = Jikan.Repo.update(Ecto.Changeset.change(user, role: "manager"))
     client = client_fixture(user)
-    project = project_fixture(user, %{client_id: client.id, color: "#3B82F6"})
+    project = project_fixture(user, %{client_id: client.id, color: "#3B82F6", archived: false})
     conn = log_in_user(conn, user)
 
     %{project: project, user: user, client: client, conn: conn}
@@ -28,7 +28,7 @@ defmodule JikanWeb.ProjectLiveTest do
       assert html =~ project.name
     end
 
-    test "saves new project", %{conn: conn} do
+    test "saves new project", %{conn: conn, client: client} do
       {:ok, index_live, _html} = live(conn, ~p"/projects")
 
       assert {:ok, form_live, _} =
@@ -43,9 +43,11 @@ defmodule JikanWeb.ProjectLiveTest do
              |> form("#project-form", project: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
+      create_attrs_with_client = Map.put(@create_attrs, :client_id, client.id)
+
       assert {:ok, index_live, _html} =
                form_live
-               |> form("#project-form", project: @create_attrs)
+               |> form("#project-form", project: create_attrs_with_client)
                |> render_submit()
                |> follow_redirect(conn, ~p"/projects")
 
@@ -59,7 +61,7 @@ defmodule JikanWeb.ProjectLiveTest do
 
       assert {:ok, form_live, _html} =
                index_live
-               |> element("#projects-#{project.id} a", "Edit")
+               |> element("#projects-#{project.id} a[href*=\"edit\"]")
                |> render_click()
                |> follow_redirect(conn, ~p"/projects/#{project}/edit")
 
@@ -103,7 +105,7 @@ defmodule JikanWeb.ProjectLiveTest do
 
       assert {:ok, form_live, _} =
                show_live
-               |> element("a", "Edit")
+               |> element("a[href*=\"edit?return_to=show\"]")
                |> render_click()
                |> follow_redirect(conn, ~p"/projects/#{project}/edit?return_to=show")
 

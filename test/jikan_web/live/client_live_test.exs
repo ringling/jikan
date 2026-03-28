@@ -4,7 +4,6 @@ defmodule JikanWeb.ClientLiveTest do
   import Phoenix.LiveViewTest
   import Jikan.TrackingFixtures
 
-  @create_attrs %{active: true, name: "some name", contact_email: "some contact_email"}
   @update_attrs %{active: false, name: "some updated name", contact_email: "some updated contact_email"}
   @invalid_attrs %{active: false, name: nil, contact_email: nil}
   defp create_client(%{conn: conn}) do
@@ -42,15 +41,22 @@ defmodule JikanWeb.ClientLiveTest do
              |> form("#client-form", client: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
+      # Create unique client attributes to avoid name conflicts
+      unique_attrs = %{
+        active: true,
+        name: "unique client #{System.unique_integer([:positive])}",
+        contact_email: "unique#{System.unique_integer([:positive])}@example.com"
+      }
+
       assert {:ok, index_live, _html} =
                form_live
-               |> form("#client-form", client: @create_attrs)
+               |> form("#client-form", client: unique_attrs)
                |> render_submit()
                |> follow_redirect(conn, ~p"/clients")
 
       html = render(index_live)
       assert html =~ "Client created successfully"
-      assert html =~ "some name"
+      assert html =~ "unique client"
     end
 
     test "updates client in listing", %{conn: conn, client: client} do
