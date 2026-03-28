@@ -184,4 +184,214 @@ defmodule Jikan.TrackingTest do
       assert %Ecto.Changeset{} = Tracking.change_time_entry(time_entry)
     end
   end
+
+  describe "CSV export" do
+    import Jikan.AccountsFixtures
+    import Jikan.TrackingFixtures
+
+    setup do
+      user = user_fixture()
+      client = client_fixture(user, %{name: "Test Company"})
+      project = project_fixture(user, %{
+        name: "Test Project",
+        client_id: client.id,
+        archived: false
+      })
+      
+      %{user: user, client: client, project: project}
+    end
+
+    test "export_time_entries_to_csv/2 generates CSV with semicolon separator", %{user: user, project: project} do
+      # Create a time entry
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        start_time: ~T[09:00:00],
+        end_time: ~T[17:00:00],
+        duration_minutes: 480,
+        pause_duration_minutes: 60,
+        billable: true,
+        hourly_rate: Decimal.new("450.00"),
+        total_amount: Decimal.new("1575.00"),
+        description: "Test work"
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      
+      # Check header uses semicolons
+      assert String.starts_with?(csv, "Date;Company;Project;Description;Start Time;End Time;Duration;Pause Duration;Billable;Hourly Rate (DKK);Total Amount (DKK);Week;Month")
+      
+      # Check data row uses semicolons
+      lines = String.split(csv, "\n")
+      assert length(lines) >= 2
+      
+      data_line = Enum.at(lines, 1)
+      fields = String.split(data_line, ";")
+      
+      # Should have 13 fields
+      assert length(fields) == 13
+    end
+
+    test "export_time_entries_to_csv/2 formats decimals with comma separator", %{user: user, project: project} do
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        start_time: ~T[09:00:00],
+        end_time: ~T[17:00:00],
+        duration_minutes: 480,
+        pause_duration_minutes: 60,
+        billable: true,
+        hourly_rate: Decimal.new("450.50"),
+        # Total amount should be based on net duration: (480-60)/60 * 450.50 = 7 * 450.50 = 3153.50
+        total_amount: Decimal.new("3153.50"),
+        description: "Test work"
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      
+      # Check that decimal numbers use comma
+      assert String.contains?(data_line, "450,5")  # Hourly rate
+      assert String.contains?(data_line, "3153,5") # Total amount
+    end
+
+    test "export_time_entries_to_csv/2 calculates net duration correctly", %{user: user, project: project} do
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        start_time: ~T[09:00:00],
+        end_time: ~T[17:00:00],
+        duration_minutes: 480,  # 8 hours
+        pause_duration_minutes: 60,  # 1 hour pause
+        description: "Test work"
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      fields = String.split(data_line, ";")
+      
+      # Net duration should be 7:00 (480 - 60 = 420 minutes = 7 hours)
+      duration_field = Enum.at(fields, 6)
+      assert duration_field == "7:00"
+      
+      # Pause duration should be 1:00
+      pause_field = Enum.at(fields, 7)
+      assert pause_field == "1:00"
+    end
+
+    test "export_time_entries_to_csv/2 handles nil values correctly", %{user: user, project: project} do
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        start_time: nil,
+        end_time: nil,
+        duration_minutes: 120,
+        pause_duration_minutes: 0,  # Cannot be nil in database
+        billable: false,
+        hourly_rate: nil,
+        total_amount: nil,
+        description: "Manual entry"
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      fields = String.split(data_line, ";")
+      
+      # Check empty fields for nil values
+      assert Enum.at(fields, 4) == ""  # Start time
+      assert Enum.at(fields, 5) == ""  # End time
+      assert Enum.at(fields, 7) == "0:00"  # Pause duration (nil becomes 0)
+      assert Enum.at(fields, 9) == ""  # Hourly rate
+      assert Enum.at(fields, 10) == "0,00"  # Total amount (non-billable)
+    end
+
+    test "export_time_entries_to_csv/2 escapes fields with special characters", %{user: user, project: project} do
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        description: "Work with; semicolon and \"quotes\"",
+        duration_minutes: 60
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      
+      # Should properly escape the description field
+      assert String.contains?(data_line, "\"Work with; semicolon and \"\"quotes\"\"\"")
+    end
+
+    test "export_time_entries_to_csv/2 applies filters correctly", %{user: user, project: project, client: client} do
+      # Create entries in different months
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-02-15],
+        duration_minutes: 60,
+        description: "February work"
+      })
+      
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        duration_minutes: 120,
+        description: "March work"
+      })
+
+      # Test month filter
+      csv = Tracking.export_time_entries_to_csv(user, %{"year" => "2026", "month" => "3"})
+      
+      assert String.contains?(csv, "March work")
+      refute String.contains?(csv, "February work")
+      
+      # Test client filter
+      csv_with_client = Tracking.export_time_entries_to_csv(user, %{"client_id" => to_string(client.id)})
+      assert String.contains?(csv_with_client, "Test Company")
+    end
+
+    test "export_time_entries_to_csv/2 formats dates and times in local timezone", %{user: user, project: project} do
+      # Create entry with specific UTC times
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        start_time: ~T[08:00:00],  # 08:00 UTC
+        end_time: ~T[16:00:00],    # 16:00 UTC
+        duration_minutes: 480,
+        description: "Timezone test"
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      fields = String.split(data_line, ";")
+      
+      # Check date format (dd.mm.yy)
+      assert Enum.at(fields, 0) == "15.03.26"
+      
+      # Times should be converted to CET (UTC+1 in March)
+      assert Enum.at(fields, 4) == "09:00"  # Start time
+      assert Enum.at(fields, 5) == "17:00"  # End time
+    end
+
+    test "export_time_entries_to_csv/2 formats week and month correctly", %{user: user, project: project} do
+      time_entry_fixture(user, %{
+        project_id: project.id,
+        date: ~D[2026-03-15],
+        duration_minutes: 60
+      })
+
+      csv = Tracking.export_time_entries_to_csv(user)
+      lines = String.split(csv, "\n")
+      data_line = Enum.at(lines, 1)
+      fields = String.split(data_line, ";")
+      
+      # Check week format (W11 for March 15, 2026)
+      assert Enum.at(fields, 11) == "W11"
+      
+      # Check month format (Mar for March)
+      assert Enum.at(fields, 12) == "Mar"
+    end
+  end
 end

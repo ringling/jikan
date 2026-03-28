@@ -608,7 +608,7 @@ defmodule Jikan.Tracking do
   def export_time_entries_to_csv(user, filters \\ %{}) do
     time_entries = list_time_entries(user, filters)
     
-    csv_header = "Date,Company,Project,Description,Start Time,End Time,Duration,Pause Duration,Billable,Hourly Rate (DKK),Total Amount (DKK),Week,Month\n"
+    csv_header = "Date;Company;Project;Description;Start Time;End Time;Duration;Pause Duration;Billable;Hourly Rate (DKK);Total Amount (DKK);Week;Month\n"
     
     csv_rows = 
       time_entries
@@ -681,21 +681,29 @@ defmodule Jikan.Tracking do
   end
 
   defp format_rate_for_csv(nil), do: ""
-  defp format_rate_for_csv(rate), do: to_string(rate)
+  defp format_rate_for_csv(rate) do
+    rate
+    |> to_string()
+    |> String.replace(".", ",")
+  end
 
   defp format_amount_for_csv(nil, _billable), do: ""
-  defp format_amount_for_csv(_amount, false), do: "0.00"
-  defp format_amount_for_csv(amount, true), do: to_string(amount)
+  defp format_amount_for_csv(_amount, false), do: "0,00"
+  defp format_amount_for_csv(amount, true) do
+    amount
+    |> to_string()
+    |> String.replace(".", ",")
+  end
 
   defp csv_row_to_string(row) do
     row
     |> Enum.map(&escape_csv_field/1)
-    |> Enum.join(",")
+    |> Enum.join(";")
   end
 
   defp escape_csv_field(field) do
     field_str = to_string(field)
-    if String.contains?(field_str, [",", "\"", "\n"]) do
+    if String.contains?(field_str, [";", "\"", "\n"]) do
       "\"#{String.replace(field_str, "\"", "\"\"")}\"" 
     else
       field_str

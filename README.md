@@ -74,6 +74,10 @@ docker compose --env-file .env.prod logs
 # Access IEx console
 docker exec -it jikan-app-1 /app/bin/jikan remote
 
+user = Jikan.Accounts.get_user_by_email("admin@example.com")
+id = 1
+Jikan.Tracking.get_time_entry!(user, id)
+
 # Run production seeds
 docker compose --env-file .env.prod exec app /app/bin/jikan eval 'Jikan.Release.seed("seeds_prod.exs")'
 

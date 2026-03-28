@@ -4,10 +4,17 @@ defmodule Jikan.TrackingFixtures do
   entities via the `Jikan.Tracking` context.
   """
 
+  import Jikan.AccountsFixtures
+
   @doc """
   Generate a client.
   """
-  def client_fixture(user, attrs \\ %{}) do
+  def client_fixture(attrs \\ %{}) do
+    user = user_fixture()
+    client_fixture(user, attrs)
+  end
+
+  def client_fixture(user, attrs) do
     {:ok, client} =
       attrs
       |> Enum.into(%{
@@ -23,12 +30,26 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a project.
   """
-  def project_fixture(user, attrs \\ %{}) do
+  def project_fixture(attrs \\ %{}) do
+    user = user_fixture()
+    project_fixture(user, attrs)
+  end
+
+  def project_fixture(user, attrs) do
+    # Create a client if client_id is not provided
+    attrs = 
+      if Map.has_key?(attrs, :client_id) do
+        attrs
+      else
+        client = client_fixture(user)
+        Map.put(attrs, :client_id, client.id)
+      end
+    
     {:ok, project} =
       attrs
       |> Enum.into(%{
         archived: true,
-        color: "some color",
+        color: "#FF0000",
         description: "some description",
         name: "some name"
       })
@@ -40,7 +61,21 @@ defmodule Jikan.TrackingFixtures do
   @doc """
   Generate a time_entry.
   """
-  def time_entry_fixture(user, attrs \\ %{}) do
+  def time_entry_fixture(attrs \\ %{}) do
+    user = user_fixture()
+    time_entry_fixture(user, attrs)
+  end
+
+  def time_entry_fixture(user, attrs) do
+    # Create a project if project_id is not provided
+    attrs = 
+      if Map.has_key?(attrs, :project_id) do
+        attrs
+      else
+        project = project_fixture(user)
+        Map.put(attrs, :project_id, project.id)
+      end
+    
     {:ok, time_entry} =
       attrs
       |> Enum.into(%{
