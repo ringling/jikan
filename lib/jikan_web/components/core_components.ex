@@ -89,13 +89,15 @@ defmodule JikanWeb.CoreComponents do
       <.button navigate={~p"/"}>Home</.button>
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :string
-  attr :variant, :string, values: ~w(primary secondary accent success warning error ghost outline)
+  attr :class, :string, default: nil
+  attr :variant, :string,
+    values: ~w(primary secondary accent success warning error ghost outline outline-primary)
+
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
     variants = %{
-      "primary" => "btn-primary", 
+      "primary" => "btn-primary",
       "secondary" => "btn-secondary",
       "accent" => "btn-accent",
       "success" => "btn-success",
@@ -103,13 +105,16 @@ defmodule JikanWeb.CoreComponents do
       "error" => "btn-error",
       "ghost" => "btn-ghost",
       "outline" => "btn-outline",
+      "outline-primary" => "btn-outline btn-primary",
       nil => "btn-primary"
     }
 
     assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
+      assign(assigns, :class, [
+        "btn",
+        Map.fetch!(variants, assigns[:variant]),
+        assigns[:class]
+      ])
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
       ~H"""

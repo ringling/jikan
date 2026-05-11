@@ -14,7 +14,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
           <:subtitle>Track and manage your time entries</:subtitle>
           <:actions>
             <.button
-              variant="outline"
+              variant="outline-primary"
               href={build_export_url(@filters)}
               class="gap-2"
             >
@@ -22,7 +22,7 @@ defmodule JikanWeb.TimeEntryLive.Index do
               Download CSV
             </.button>
             <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-outline gap-2">
+              <div tabindex="0" role="button" class="btn btn-outline btn-primary gap-2">
                 <.icon name="hero-archive-box" class="size-5" />
                 Backup
                 <.icon name="hero-chevron-down" class="size-4" />
