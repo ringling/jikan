@@ -7,20 +7,41 @@ defmodule JikanWeb.TimeEntryLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-1">
+      <div id="time-entries-backup" phx-hook="LocalBackup" class="p-1">
         <.header>
           <.icon name="hero-clock" class="size-8 inline" /> Time Entries
           <div class="badge badge-neutral badge-lg ml-3">{@entry_count}</div>
           <:subtitle>Track and manage your time entries</:subtitle>
           <:actions>
-            <.button 
-              variant="outline" 
+            <.button
+              variant="outline-primary"
               href={build_export_url(@filters)}
               class="gap-2"
             >
               <.icon name="hero-arrow-down-tray" class="size-5" />
               Download CSV
             </.button>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-outline btn-primary gap-2">
+                <.icon name="hero-archive-box" class="size-5" />
+                Backup
+                <.icon name="hero-chevron-down" class="size-4" />
+              </div>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-50 w-56 p-2 shadow-lg">
+                <li>
+                  <a phx-click="backup_entries" class="flex items-center gap-2">
+                    <.icon name="hero-archive-box" class="size-4" />
+                    Create new backup
+                  </a>
+                </li>
+                <li>
+                  <a id="manage-backups-btn" class="flex items-center gap-2">
+                    <.icon name="hero-archive-box-arrow-down" class="size-4" />
+                    Manage backups
+                  </a>
+                </li>
+              </ul>
+            </div>
             <.button variant="primary" navigate={~p"/time-entries/new"} class="gap-2">
               <.icon name="hero-plus" class="size-5" />
               New Entry
@@ -299,6 +320,28 @@ defmodule JikanWeb.TimeEntryLive.Index do
             </div>
           </div>
         </div>
+        <dialog id="backup-admin-modal" class="modal">
+          <div class="modal-box w-11/12 max-w-3xl">
+            <div class="flex items-baseline justify-between mb-4">
+              <h3 class="font-bold text-lg">Backup Administration</h3>
+              <span id="backup-slots-indicator" class="text-sm opacity-60"></span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th><th>Entries</th><th>Filter</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="backup-admin-tbody"></tbody>
+              </table>
+            </div>
+            <div class="modal-action">
+              <form method="dialog"><button class="btn">Close</button></form>
+            </div>
+          </div>
+          <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
       </div>
     </Layouts.app>
     """
@@ -378,6 +421,31 @@ defmodule JikanWeb.TimeEntryLive.Index do
      socket
      |> assign(:entry_count, socket.assigns.entry_count - 1)
      |> stream_delete(:time_entries, time_entry)}
+  end
+
+  def handle_event("backup_entries", _params, socket) do
+    user = socket.assigns.current_user
+    entries = list_time_entries(user, socket.assigns.filters)
+    description = build_filters_description(socket.assigns.filters)
+    count = length(entries)
+
+    flash_msg =
+      case count do
+        0 -> "No entries to back up for the current filter"
+        1 -> "Backup saved: 1 entry stored in your browser"
+        n -> "Backup saved: #{n} entries stored in your browser"
+      end
+
+    flash_kind = if count == 0, do: :error, else: :info
+
+    {:noreply,
+     socket
+     |> put_flash(flash_kind, flash_msg)
+     |> push_event("save_backup", %{
+       entries: Enum.map(entries, &serialize_entry_for_backup/1),
+       backed_up_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+       filters_description: description
+     })}
   end
 
   def handle_event("toggle_filters", _params, socket) do
@@ -571,15 +639,48 @@ defmodule JikanWeb.TimeEntryLive.Index do
   defp build_export_url(filters) do
     base_url = "/exports/time-entries"
     if has_active_filters?(filters) do
-      query_params = 
+      query_params =
         filters
         |> Enum.reject(fn {_key, value} -> value == "" or is_nil(value) end)
         |> Enum.into(%{})
         |> URI.encode_query()
-      
+
       "#{base_url}?#{query_params}"
     else
       base_url
     end
   end
+
+  defp build_filters_description(filters) when map_size(filters) == 0, do: "All time"
+  defp build_filters_description(filters) do
+    []
+    |> then(fn parts -> if filters["year"], do: parts ++ ["Year: #{filters["year"]}"], else: parts end)
+    |> then(fn parts -> if filters["month"], do: parts ++ ["Month: #{filters["month"]}"], else: parts end)
+    |> then(fn parts -> if filters["week"], do: parts ++ ["Week: #{filters["week"]}"], else: parts end)
+    |> then(fn parts -> if filters["client_id"], do: parts ++ ["Client filtered"], else: parts end)
+    |> Enum.join(", ")
+    |> then(fn desc -> if desc == "", do: "All time", else: desc end)
+  end
+
+  defp serialize_entry_for_backup(entry) do
+    %{
+      id: entry.id,
+      description: entry.description,
+      date: Date.to_iso8601(entry.date),
+      start_time: format_time_for_backup(entry.start_time),
+      end_time: format_time_for_backup(entry.end_time),
+      duration_minutes: entry.duration_minutes,
+      pause_duration_minutes: entry.pause_duration_minutes,
+      billable: entry.billable,
+      hourly_rate: entry.hourly_rate && Decimal.to_string(entry.hourly_rate),
+      total_amount: entry.total_amount && Decimal.to_string(entry.total_amount),
+      project: %{id: entry.project.id, name: entry.project.name, color: entry.project.color},
+      client: entry.project.client && %{id: entry.project.client.id, name: entry.project.client.name},
+      inserted_at: DateTime.to_iso8601(entry.inserted_at),
+      updated_at: DateTime.to_iso8601(entry.updated_at)
+    }
+  end
+
+  defp format_time_for_backup(nil), do: nil
+  defp format_time_for_backup(time), do: Time.to_iso8601(time)
 end
