@@ -32,6 +32,7 @@ Hooks.LocalBackup = {
 
   mounted() {
     this.handleEvent("save_backup", (payload) => {
+      if (!payload.entries || payload.entries.length === 0) return
       const backups = this.loadBackups()
       backups.unshift({
         id: payload.backed_up_at,
@@ -46,6 +47,25 @@ Hooks.LocalBackup = {
     const manageBtn = document.getElementById("manage-backups-btn")
     if (manageBtn) {
       manageBtn.addEventListener("click", () => this.showAdmin())
+    }
+
+    // Event delegation for download/delete buttons inside the admin table
+    const tbody = document.getElementById("backup-admin-tbody")
+    if (tbody) {
+      tbody.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-action]")
+        if (!btn) return
+        const idx = parseInt(btn.dataset.index, 10)
+        const backups = this.loadBackups()
+        if (isNaN(idx) || !backups[idx]) return
+        if (btn.dataset.action === "download") {
+          this.downloadBackup(backups[idx])
+        } else if (btn.dataset.action === "delete") {
+          backups.splice(idx, 1)
+          this.saveBackups(backups)
+          this.renderAdminTable()
+        }
+      })
     }
   },
 
@@ -67,25 +87,38 @@ Hooks.LocalBackup = {
   renderAdminTable() {
     const backups = this.loadBackups()
     const tbody = document.getElementById("backup-admin-tbody")
+    const indicator = document.getElementById("backup-slots-indicator")
+    if (indicator) indicator.textContent = `${backups.length} of ${this.MAX_BACKUPS} slots used`
     if (backups.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center opacity-50 py-4">No backups saved yet</td></tr>`
+      tbody.innerHTML = `
+        <tr><td colspan="4" class="text-center py-8">
+          <div class="flex flex-col items-center gap-2 opacity-60">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+            <span>No backups saved yet</span>
+            <span class="text-xs">Use the Backup menu to create one</span>
+          </div>
+        </td></tr>`
       return
     }
     tbody.innerHTML = backups.map((b, idx) => `
       <tr>
         <td>${new Date(b.backed_up_at).toLocaleString()}</td>
         <td>${b.entry_count}</td>
-        <td>${b.filters_description}</td>
+        <td>${this.escapeHtml(b.filters_description)}</td>
         <td class="flex gap-2">
-          <button class="btn btn-xs btn-outline" onclick="window._localBackup.download(${idx})">Download</button>
-          <button class="btn btn-xs btn-error btn-outline" onclick="window._localBackup.delete(${idx})">Delete</button>
+          <button type="button" class="btn btn-xs btn-outline" data-action="download" data-index="${idx}">Download</button>
+          <button type="button" class="btn btn-xs btn-error btn-outline" data-action="delete" data-index="${idx}">Delete</button>
         </td>
       </tr>
     `).join("")
-    window._localBackup = {
-      download: (idx) => this.downloadBackup(backups[idx]),
-      delete: (idx) => { backups.splice(idx, 1); this.saveBackups(backups); this.renderAdminTable() }
-    }
+  },
+
+  escapeHtml(str) {
+    const div = document.createElement("div")
+    div.textContent = str ?? ""
+    return div.innerHTML
   },
 
   downloadBackup(backup) {

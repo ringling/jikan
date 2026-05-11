@@ -21,14 +21,27 @@ defmodule JikanWeb.TimeEntryLive.Index do
               <.icon name="hero-arrow-down-tray" class="size-5" />
               Download CSV
             </.button>
-            <.button variant="outline" phx-click="backup_entries" class="gap-2">
-              <.icon name="hero-archive-box" class="size-5" />
-              Backup
-            </.button>
-            <button id="manage-backups-btn" class="btn btn-outline gap-2">
-              <.icon name="hero-archive-box-arrow-down" class="size-5" />
-              Manage Backups
-            </button>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-outline gap-2">
+                <.icon name="hero-archive-box" class="size-5" />
+                Backup
+                <.icon name="hero-chevron-down" class="size-4" />
+              </div>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-50 w-56 p-2 shadow-lg">
+                <li>
+                  <a phx-click="backup_entries" class="flex items-center gap-2">
+                    <.icon name="hero-archive-box" class="size-4" />
+                    Create new backup
+                  </a>
+                </li>
+                <li>
+                  <a id="manage-backups-btn" class="flex items-center gap-2">
+                    <.icon name="hero-archive-box-arrow-down" class="size-4" />
+                    Manage backups
+                  </a>
+                </li>
+              </ul>
+            </div>
             <.button variant="primary" navigate={~p"/time-entries/new"} class="gap-2">
               <.icon name="hero-plus" class="size-5" />
               New Entry
@@ -309,7 +322,10 @@ defmodule JikanWeb.TimeEntryLive.Index do
         </div>
         <dialog id="backup-admin-modal" class="modal">
           <div class="modal-box w-11/12 max-w-3xl">
-            <h3 class="font-bold text-lg mb-4">Backup Administration</h3>
+            <div class="flex items-baseline justify-between mb-4">
+              <h3 class="font-bold text-lg">Backup Administration</h3>
+              <span id="backup-slots-indicator" class="text-sm opacity-60"></span>
+            </div>
             <div class="overflow-x-auto">
               <table class="table table-sm">
                 <thead>
@@ -411,9 +427,21 @@ defmodule JikanWeb.TimeEntryLive.Index do
     user = socket.assigns.current_user
     entries = list_time_entries(user, socket.assigns.filters)
     description = build_filters_description(socket.assigns.filters)
+    count = length(entries)
+
+    flash_msg =
+      case count do
+        0 -> "No entries to back up for the current filter"
+        1 -> "Backup saved: 1 entry stored in your browser"
+        n -> "Backup saved: #{n} entries stored in your browser"
+      end
+
+    flash_kind = if count == 0, do: :error, else: :info
 
     {:noreply,
-     push_event(socket, "save_backup", %{
+     socket
+     |> put_flash(flash_kind, flash_msg)
+     |> push_event("save_backup", %{
        entries: Enum.map(entries, &serialize_entry_for_backup/1),
        backed_up_at: DateTime.utc_now() |> DateTime.to_iso8601(),
        filters_description: description

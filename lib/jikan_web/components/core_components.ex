@@ -297,7 +297,7 @@ defmodule JikanWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <div class="hero bg-base-200 rounded-box mb-6">
+    <div class="hero bg-base-200 rounded-box mb-6 relative z-10">
       <div class="hero-content text-center py-8">
         <div class="max-w-md">
           <h1 class="text-3xl font-bold">
