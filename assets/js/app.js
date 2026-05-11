@@ -24,10 +24,85 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+const Hooks = {}
+
+Hooks.LocalBackup = {
+  STORAGE_KEY: "jikan:backups",
+  MAX_BACKUPS: 5,
+
+  mounted() {
+    this.handleEvent("save_backup", (payload) => {
+      const backups = this.loadBackups()
+      backups.unshift({
+        id: payload.backed_up_at,
+        backed_up_at: payload.backed_up_at,
+        entry_count: payload.entries.length,
+        filters_description: payload.filters_description,
+        entries: payload.entries
+      })
+      this.saveBackups(backups.slice(0, this.MAX_BACKUPS))
+    })
+
+    const manageBtn = document.getElementById("manage-backups-btn")
+    if (manageBtn) {
+      manageBtn.addEventListener("click", () => this.showAdmin())
+    }
+  },
+
+  loadBackups() {
+    try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY)) || [] }
+    catch (_) { return [] }
+  },
+
+  saveBackups(backups) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(backups))
+  },
+
+  showAdmin() {
+    const modal = document.getElementById("backup-admin-modal")
+    this.renderAdminTable()
+    modal.showModal()
+  },
+
+  renderAdminTable() {
+    const backups = this.loadBackups()
+    const tbody = document.getElementById("backup-admin-tbody")
+    if (backups.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center opacity-50 py-4">No backups saved yet</td></tr>`
+      return
+    }
+    tbody.innerHTML = backups.map((b, idx) => `
+      <tr>
+        <td>${new Date(b.backed_up_at).toLocaleString()}</td>
+        <td>${b.entry_count}</td>
+        <td>${b.filters_description}</td>
+        <td class="flex gap-2">
+          <button class="btn btn-xs btn-outline" onclick="window._localBackup.download(${idx})">Download</button>
+          <button class="btn btn-xs btn-error btn-outline" onclick="window._localBackup.delete(${idx})">Delete</button>
+        </td>
+      </tr>
+    `).join("")
+    window._localBackup = {
+      download: (idx) => this.downloadBackup(backups[idx]),
+      delete: (idx) => { backups.splice(idx, 1); this.saveBackups(backups); this.renderAdminTable() }
+    }
+  },
+
+  downloadBackup(backup) {
+    const blob = new Blob([JSON.stringify(backup.entries, null, 2)], {type: "application/json"})
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(blob)
+    a.download = `jikan_backup_${backup.backed_up_at.replace(/[:.]/g, "-")}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits
