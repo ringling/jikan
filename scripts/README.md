@@ -17,7 +17,7 @@ pip install weasyprint
 ### Usage
 
 ```
-python generate_specification.py BACKUP.json [options]
+uv run generate_specification.py BACKUP.json [options]
 ```
 
 Place generated output in the `output/` folder (gitignored).
@@ -48,7 +48,7 @@ Client address and CVR are read automatically from the backup if the client was 
 ### Example
 
 ```bash
-python generate_specification.py output/backup.json \
+uv run generate_specification.py output/backup.json \
     --client "PFA" \
     --project "Varslinger" \
     --month 2026-05 \
