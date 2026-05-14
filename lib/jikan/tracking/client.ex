@@ -5,6 +5,8 @@ defmodule Jikan.Tracking.Client do
   schema "clients" do
     field :name, :string
     field :contact_email, :string
+    field :cvr, :string
+    field :address, :string
     field :active, :boolean, default: true
     field :default_hourly_rate, :decimal
     
@@ -17,7 +19,7 @@ defmodule Jikan.Tracking.Client do
   @doc false
   def changeset(client, attrs) do
     client
-    |> cast(attrs, [:name, :contact_email, :active, :default_hourly_rate, :user_id])
+    |> cast(attrs, [:name, :contact_email, :cvr, :address, :active, :default_hourly_rate, :user_id])
     |> validate_required([:name, :active, :user_id])
     |> validate_number(:default_hourly_rate, greater_than_or_equal_to: 0)
     |> unique_constraint(:name, name: :clients_name_user_id_index)

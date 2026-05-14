@@ -675,7 +675,13 @@ defmodule JikanWeb.TimeEntryLive.Index do
       hourly_rate: entry.hourly_rate && Decimal.to_string(entry.hourly_rate),
       total_amount: entry.total_amount && Decimal.to_string(entry.total_amount),
       project: %{id: entry.project.id, name: entry.project.name, color: entry.project.color},
-      client: entry.project.client && %{id: entry.project.client.id, name: entry.project.client.name},
+      client: entry.project.client && %{
+        id: entry.project.client.id,
+        name: entry.project.client.name,
+        cvr: entry.project.client.cvr,
+        address: entry.project.client.address,
+        contact_email: entry.project.client.contact_email
+      },
       inserted_at: DateTime.to_iso8601(entry.inserted_at),
       updated_at: DateTime.to_iso8601(entry.updated_at)
     }

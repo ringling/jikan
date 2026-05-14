@@ -60,7 +60,31 @@ defmodule JikanWeb.ClientLive.Form do
                 </div>
                 
                 <div class="form-control w-full">
-                  <.input 
+                  <.input
+                    field={@form[:address]}
+                    type="textarea"
+                    label="Address"
+                    placeholder="Street, city, postal code"
+                  />
+                  <label class="label">
+                    <span class="label-text-alt">Company mailing address</span>
+                  </label>
+                </div>
+
+                <div class="form-control w-full">
+                  <.input
+                    field={@form[:cvr]}
+                    type="text"
+                    label="CVR Number"
+                    placeholder="12345678"
+                  />
+                  <label class="label">
+                    <span class="label-text-alt">Danish business registration number (8 digits)</span>
+                  </label>
+                </div>
+
+                <div class="form-control w-full">
+                  <.input
                     field={@form[:default_hourly_rate]} 
                     type="number" 
                     label="Default Hourly Rate (DKK)" 

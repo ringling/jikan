@@ -74,6 +74,24 @@ defmodule JikanWeb.ClientLive.Show do
                 </div>
                 
                 <div>
+                  <div class="text-sm opacity-70 mb-2">Address</div>
+                  <%= if @client.address do %>
+                    <div class="whitespace-pre-line">{@client.address}</div>
+                  <% else %>
+                    <div class="text-base opacity-60 italic">No address provided</div>
+                  <% end %>
+                </div>
+
+                <div>
+                  <div class="text-sm opacity-70 mb-2">CVR Number</div>
+                  <%= if @client.cvr do %>
+                    <div class="font-mono">{@client.cvr}</div>
+                  <% else %>
+                    <div class="text-base opacity-60 italic">No CVR provided</div>
+                  <% end %>
+                </div>
+
+                <div>
                   <div class="text-sm opacity-70 mb-2">Default Hourly Rate</div>
                   <%= if @client.default_hourly_rate do %>
                     <div class="flex items-center gap-2">
