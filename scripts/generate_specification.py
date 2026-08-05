@@ -459,16 +459,18 @@ def main(argv=None):
         d1 = max(e["date"] for e in entries)
         period_label = f"{da_date(d0)} – {da_date(d1)}"
 
-    # Timesats-label til sammendrag: brug data hvis entydig, ellers "variabel".
-    rates = {e["rate"] for e in entries if e["rate"] is not None}
-    if len(rates) > 1:
-        rate_label = "variabel"
-        print(f"Advarsel: flere timesatser i data ({sorted(rates)}). "
-              f"Beløbene afspejler de faktiske satser per post.", file=sys.stderr)
-    elif len(rates) == 1:
-        rate_label = f"{dkk(next(iter(rates)))} kr"
-    else:
-        rate_label = f"{dkk(args.rate)} kr"
+    # Timesats-label: brug --rate (brugerens angivne sats).
+    # Advarsler til stderr hvis poster afviger fra den angivne sats.
+    rate_label = f"{dkk(args.rate)} kr"
+    mismatched = [
+        e for e in entries
+        if e["rate"] is not None and abs(e["rate"] - args.rate) > 0.01
+    ]
+    if mismatched:
+        print(f"Advarsel: {len(mismatched)} poster har en anden timesats end {dkk(args.rate)} kr:",
+              file=sys.stderr)
+        for e in mismatched:
+            print(f"  {da_date(e['date'])}  {dkk(e['rate'])} kr", file=sys.stderr)
 
     # Advarsel hvis nogle poster mangler beløb.
     n_missing = sum(1 for e in entries if e["amount_missing"])
