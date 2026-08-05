@@ -394,6 +394,9 @@ def main(argv=None):
     p.add_argument("--client-cvr", default=None,
                    help="Kundens CVR-nummer (ellers fra data)")
     p.add_argument("--rate", type=float, default=925.0, help="Timesats i kr")
+    p.add_argument("--recompute-amounts", action="store_true",
+                   help="Beregn beløb som arbejdstimer × --rate i stedet for at bruge "
+                        "total_amount fra backup (nyttigt når Jikan-data er forældet)")
     p.add_argument("--invoice-no", default="", help="Fakturanummer (valgfrit)")
     p.add_argument("--include-nonbillable", action="store_true",
                    help="Tag også ikke-fakturerbare poster med (default: kun billable=true)")
@@ -459,20 +462,32 @@ def main(argv=None):
         d1 = max(e["date"] for e in entries)
         period_label = f"{da_date(d0)} – {da_date(d1)}"
 
-    # Timesats-label: brug --rate (brugerens angivne sats).
-    # Advarsler til stderr hvis poster afviger fra den angivne sats.
-    rate_label = f"{dkk(args.rate)} kr"
-    mismatched = [
-        e for e in entries
-        if e["rate"] is not None and abs(e["rate"] - args.rate) > 0.01
-    ]
-    if mismatched:
-        print(f"Advarsel: {len(mismatched)} poster har en anden timesats end {dkk(args.rate)} kr:",
+    # Genberegn beløb hvis --recompute-amounts er angivet.
+    if args.recompute_amounts:
+        for e in entries:
+            e["amount"] = e["work_min"] / 60 * args.rate
+            e["amount_missing"] = False
+        print(f"Info: beløb genberegnet som arbejdstimer × {dkk(args.rate)} kr.",
               file=sys.stderr)
-        for e in mismatched:
-            print(f"  {da_date(e['date'])}  {dkk(e['rate'])} kr", file=sys.stderr)
+    else:
+        # Advar om poster hvor total_amount ikke stemmer med arbejdstimer × rate.
+        bad = [
+            e for e in entries
+            if not e["amount_missing"]
+            and abs(e["amount"] - e["work_min"] / 60 * args.rate) > 0.50
+        ]
+        if bad:
+            print(f"Advarsel: {len(bad)} poster har beløb der ikke stemmer med "
+                  f"{dkk(args.rate)} kr × arbejdstimer (brug --recompute-amounts for at rette):",
+                  file=sys.stderr)
+            for e in bad:
+                computed = e["work_min"] / 60 * args.rate
+                print(f"  {da_date(e['date'])}  gemt {dkk(e['amount'])}  "
+                      f"beregnet {dkk(computed)}  ({dkk(e['amount'] - computed):+})",
+                      file=sys.stderr)
 
-    # Advarsel hvis nogle poster mangler beløb.
+    rate_label = f"{dkk(args.rate)} kr"
+
     n_missing = sum(1 for e in entries if e["amount_missing"])
     if n_missing:
         print(f"Advarsel: {n_missing} poster mangler total_amount og vises "
