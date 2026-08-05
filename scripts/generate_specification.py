@@ -225,7 +225,7 @@ def esc(text: str) -> str:
 
 def build_html(entries, *, seller, seller_addr, seller_cvr, consultant,
                client_name, client_addr, client_cvr, project, period_label,
-               rate, invoice_no):
+               rate_label, invoice_no):
     """Saml den færdige HTML-streng."""
     entries = sorted(entries, key=lambda e: e["date"])
 
@@ -235,6 +235,7 @@ def build_html(entries, *, seller, seller_addr, seller_cvr, consultant,
         weeks[e["iso_week"]].append(e)
 
     total_work_min = sum(e["work_min"] for e in entries)
+    total_pause_min = sum(e["pause_min"] for e in entries)
     total_amount = sum(e["amount"] for e in entries)
     n_days = len(entries)
 
@@ -263,11 +264,12 @@ def build_html(entries, *, seller, seller_addr, seller_cvr, consultant,
             )
 
         wk_work = sum(e["work_min"] for e in wk_entries)
+        wk_pause = sum(e["pause_min"] for e in wk_entries)
         wk_amt = sum(e["amount"] for e in wk_entries)
         rows.append(
             f'      <tr class="week-sub"><td colspan="3">Uge {wk} i alt '
             f'&mdash; {len(wk_entries)} dage</td>'
-            f'<td class="num">{hm(wk_work)}</td>'
+            f'<td class="num">{hm(wk_pause)}</td>'
             f'<td class="num">{hours(wk_work / 60)}</td>'
             f'<td class="num">{dkk(wk_amt)}</td></tr>'
         )
@@ -329,7 +331,7 @@ def build_html(entries, *, seller, seller_addr, seller_cvr, consultant,
   <div class="summary">
     <div><span>Arbejdsdage</span><strong>{n_days}</strong></div>
     <div><span>Arbejdstimer</span><strong>{hours(total_work_min / 60)}</strong></div>
-    <div><span>Timesats</span><strong>{dkk(rate)} kr</strong></div>
+    <div><span>Timesats</span><strong>{esc(rate_label)}</strong></div>
     <div><span>I alt ekskl. moms</span><strong>{dkk(total_amount)} kr</strong></div>
   </div>
 
@@ -350,7 +352,7 @@ def build_html(entries, *, seller, seller_addr, seller_cvr, consultant,
     <tfoot>
       <tr>
         <td colspan="3">I alt &mdash; {n_days} dage</td>
-        <td class="num">{hm(total_work_min)}</td>
+        <td class="num">{hm(total_pause_min)}</td>
         <td class="num">{hours(total_work_min / 60)}</td>
         <td class="num">{dkk(total_amount)}</td>
       </tr>
@@ -457,11 +459,16 @@ def main(argv=None):
         d1 = max(e["date"] for e in entries)
         period_label = f"{da_date(d0)} – {da_date(d1)}"
 
-    # Advarsel hvis flere satser i datasættet (ignorér null).
+    # Timesats-label til sammendrag: brug data hvis entydig, ellers "variabel".
     rates = {e["rate"] for e in entries if e["rate"] is not None}
     if len(rates) > 1:
+        rate_label = "variabel"
         print(f"Advarsel: flere timesatser i data ({sorted(rates)}). "
-              f"Bruger --rate={args.rate} i summeringen.", file=sys.stderr)
+              f"Beløbene afspejler de faktiske satser per post.", file=sys.stderr)
+    elif len(rates) == 1:
+        rate_label = f"{dkk(next(iter(rates)))} kr"
+    else:
+        rate_label = f"{dkk(args.rate)} kr"
 
     # Advarsel hvis nogle poster mangler beløb.
     n_missing = sum(1 for e in entries if e["amount_missing"])
@@ -480,7 +487,7 @@ def main(argv=None):
         client_cvr=client_cvr,
         project=args.project or entries[0]["project"],
         period_label=period_label,
-        rate=args.rate,
+        rate_label=rate_label,
         invoice_no=args.invoice_no,
     )
 
