@@ -482,8 +482,10 @@ def main(argv=None):
                   file=sys.stderr)
             for e in bad:
                 computed = e["work_min"] / 60 * args.rate
+                diff = e["amount"] - computed
+                sign = "+" if diff > 0 else ""
                 print(f"  {da_date(e['date'])}  gemt {dkk(e['amount'])}  "
-                      f"beregnet {dkk(computed)}  ({dkk(e['amount'] - computed):+})",
+                      f"beregnet {dkk(computed)}  ({sign}{dkk(diff)})",
                       file=sys.stderr)
 
     rate_label = f"{dkk(args.rate)} kr"
